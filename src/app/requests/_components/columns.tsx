@@ -64,4 +64,14 @@ export const columns: ColumnDef<Request>[] = [
       <span>{dayjs(row.getValue('createdAt')).format('DD/MM/YYYY')}</span>
     ),
   },
+    // NOVA COLUNA DE AÇÕES
+  {
+    id: 'actions',
+    cell: ({ row }) => <DataTableRowActions row={row} />,
+  },
 ]
+import { DataTableRowActions } from './data-table-row-actions'
+import { Row } from '@tanstack/react-table'
+export interface DataTableRowActionsProps<TData> {
+  row: Row<TData>
+} 

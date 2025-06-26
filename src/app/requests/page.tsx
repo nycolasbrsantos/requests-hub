@@ -1,60 +1,63 @@
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
-import { Toaster } from '@/components/ui/sonner'
-import { db } from '@/db'
-import { requests } from '@/db/schema'
-import { desc } from 'drizzle-orm'
+// src/app/(protected)/requests/page.tsx
+import Link from 'next/link'
+import { ShoppingCart, Headset, Wrench } from 'lucide-react'
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
+import { PageContainer } from '@/components/ui/page-container'
 
-import { columns } from './_components/columns'
-import { CreateRequestDialog } from './_components/create-request-dialog'
-import { DataTable } from './_components/data-table'
-
-// A função para buscar os dados permanece a mesma
-async function getRequests() {
-  try {
-    const data = await db.select().from(requests).orderBy(desc(requests.createdAt))
-    return { data }
-  } catch (error) {
-    console.error(error)
-    return { error: 'Não foi possível buscar as requisições.' }
-  }
+export const metadata = {
+  title: 'Portal de Requisições',
 }
 
-export default async function RequestsHubPage() {
-  const { data, error } = await getRequests()
+export default function RequestsPortalPage() {
+  const cards = [
+    {
+      title: 'Requisição de Compras',
+      description: 'Solicite materiais, equipamentos e outros itens.',
+      icon: ShoppingCart,
+      href: '/requests/add?type=purchase',
+    },
+    {
+      title: 'Suporte de T.I.',
+      description: 'Abra um chamado para problemas técnicos e suporte.',
+      icon: Headset,
+      href: '/requests/add?type=it_ticket',
+    },
+    {
+      title: 'Manutenção Predial',
+      description: 'Peça reparos ou informe sobre problemas na infraestrutura.',
+      icon: Wrench,
+      href: '/requests/add?type=maintenance',
+    },
+  ]
 
-  // Envolvemos todo o conteúdo da página em um container div para centralização
   return (
-    <div className="mx-auto w-full max-w-7xl px-4 py-10">
-      <Toaster richColors />
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="text-2xl">Hub de Requisições</CardTitle>
-              <CardDescription className="mt-1">
-                Crie e gerencie suas ordens de compra, manutenção e tickets de
-                T.I.
-              </CardDescription>
-            </div>
-            <CreateRequestDialog />
-          </div>
-        </CardHeader>
-        <CardContent>
-          {error || !data ? (
-            <div className="flex h-60 items-center justify-center">
-              <p className="text-red-500">{error || 'Erro ao carregar dados.'}</p>
-            </div>
-          ) : (
-            <DataTable columns={columns} data={data} />
-          )}
-        </CardContent>
-      </Card>
-    </div>
+    <PageContainer className="py-12">
+      <h1 className="text-2xl font-semibold mb-2 text-center">
+        Bem-vindo(a) ao Portal de Serviços
+      </h1>
+      <p className="text-center text-sm text-muted-foreground mb-8">
+        Selecione o serviço que deseja solicitar
+      </p>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+        {cards.map(({ title, description, icon: Icon, href }) => (
+          <Link key={title} href={href} passHref>
+            <Card asChild className="cursor-pointer hover:shadow-lg transition-shadow">
+              <a className="flex flex-col items-center p-6 space-y-4">
+                <Icon className="w-12 h-12 text-primary" />
+                <CardHeader className="p-0">
+                  <CardTitle className="text-lg">{title}</CardTitle>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <p className="text-sm text-center text-muted-foreground">
+                    {description}
+                  </p>
+                </CardContent>
+              </a>
+            </Card>
+          </Link>
+        ))}
+      </div>
+    </PageContainer>
   )
 }
