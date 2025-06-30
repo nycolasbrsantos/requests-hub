@@ -5,7 +5,7 @@ import dayjs from 'dayjs';
 import { StatusBadge } from './StatusBadge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
-import { MoreVertical, Info, CheckCircle2, XCircle, ArrowUpDown, ArrowUp, ArrowDown, Loader2, FileQuestion } from 'lucide-react';
+import { MoreVertical, Info, CheckCircle2, XCircle, ArrowUpDown, ArrowUp, ArrowDown, Loader2, FileQuestion, Clock } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -59,6 +59,7 @@ export default function RequestsTable({ requests, isLoading = false }: RequestsT
   const [dateStart, setDateStart] = useState<string>('');
   const [dateEnd, setDateEnd] = useState<string>('');
   const [isFiltering, setIsFiltering] = useState(false);
+  const [openHistoryId, setOpenHistoryId] = useState<number | null>(null);
 
   const filteredRequests = useMemo(() => {
     return requests.filter((req) => {
@@ -293,7 +294,7 @@ export default function RequestsTable({ requests, isLoading = false }: RequestsT
                   <td className="px-4 py-2 whitespace-nowrap">{req.customId || req.id}</td>
                   <td className="px-4 py-2 whitespace-nowrap max-w-xs truncate">{req.title}</td>
                   <td className="px-4 py-2 whitespace-nowrap capitalize">{req.type}</td>
-                  <td className="px-4 py-2 whitespace-nowrap capitalize"><StatusBadge status={req.status} /></td>
+                  <td className="px-4 py-2 whitespace-nowrap capitalize"><StatusBadge status={req.status as 'pending' | 'approved' | 'rejected' | 'in_progress' | 'completed'} /></td>
                   <td className="px-4 py-2 whitespace-nowrap max-w-xs truncate">{req.requesterName}</td>
                   <td className="px-4 py-2 whitespace-nowrap">{dayjs(req.createdAt).format('DD/MM/YYYY HH:mm')}</td>
                   <td className="px-4 py-2 whitespace-nowrap space-x-2">
@@ -306,6 +307,9 @@ export default function RequestsTable({ requests, isLoading = false }: RequestsT
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem onClick={() => setOpenDetailsId(req.id)}>
                           Visualizar detalhes
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setOpenHistoryId(req.id)}>
+                          <Clock className="w-4 h-4 mr-2 text-muted-foreground" /> Ver histórico
                         </DropdownMenuItem>
                         {(role === 'admin' || role === 'supervisor') && (
                           <DropdownMenuItem onClick={() => toast.info(`Atualizar status da requisição #${req.id}`, { icon: <Info className="text-blue-500" />, description: 'Você pode atualizar o status para Em andamento.' })}>
@@ -372,7 +376,7 @@ export default function RequestsTable({ requests, isLoading = false }: RequestsT
                         <div className="space-y-2 text-sm">
                           <div><b>Título:</b> {req.title}</div>
                           <div><b>Tipo:</b> {req.type}</div>
-                          <div><b>Status:</b> <StatusBadge status={req.status} /></div>
+                          <div><b>Status:</b> <StatusBadge status={req.status as 'pending' | 'approved' | 'rejected' | 'in_progress' | 'completed'} /></div>
                           <div><b>Solicitante:</b> {req.requesterName}</div>
                           <div><b>Data:</b> {dayjs(req.createdAt).format('DD/MM/YYYY HH:mm')}</div>
                           {req.description && <div><b>Descrição:</b> {req.description}</div>}
@@ -492,6 +496,33 @@ export default function RequestsTable({ requests, isLoading = false }: RequestsT
                             setNewFiles([]);
                           }}>Salvar</button>
                         </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
+                    <Dialog open={openHistoryId === req.id} onOpenChange={() => setOpenHistoryId(null)}>
+                      <DialogContent className="max-w-md">
+                        <DialogHeader>
+                          <DialogTitle>Histórico de Status</DialogTitle>
+                        </DialogHeader>
+                        <div className="py-2">
+                          {Array.isArray(req.statusHistory) && req.statusHistory.length > 0 ? (
+                            <ol className="relative border-l border-muted-foreground/30 ml-2">
+                              {req.statusHistory.map((h, idx) => (
+                                <li key={idx} className="mb-6 ml-4">
+                                  <div className="absolute w-3 h-3 bg-primary rounded-full -left-1.5 border-2 border-white" />
+                                  <div className="flex items-center gap-2">
+                                    <StatusBadge status={h.status as 'pending' | 'approved' | 'rejected' | 'in_progress' | 'completed'} />
+                                    <span className="text-xs text-muted-foreground">{dayjs(h.changedAt).format('DD/MM/YYYY HH:mm')}</span>
+                                  </div>
+                                  <div className="text-xs text-muted-foreground mt-1">
+                                    por <span className="font-medium text-foreground">{h.changedBy}</span>
+                                  </div>
+                                </li>
+                              ))}
+                            </ol>
+                          ) : (
+                            <div className="text-sm text-muted-foreground">Nenhum histórico registrado para esta requisição.</div>
+                          )}
+                        </div>
                       </DialogContent>
                     </Dialog>
                   </td>
