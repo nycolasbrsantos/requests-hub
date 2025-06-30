@@ -5,7 +5,7 @@ import dayjs from 'dayjs';
 import { StatusBadge } from './StatusBadge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
-import { MoreVertical, Info, CheckCircle2, XCircle, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { MoreVertical, Info, CheckCircle2, XCircle, ArrowUpDown, ArrowUp, ArrowDown, Loader2, FileQuestion } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -58,6 +58,7 @@ export default function RequestsTable({ requests, isLoading = false }: RequestsT
   const [sort, setSort] = useState<{ key: keyof Request | 'customId'; direction: 'asc' | 'desc' }>({ key: 'createdAt', direction: 'desc' });
   const [dateStart, setDateStart] = useState<string>('');
   const [dateEnd, setDateEnd] = useState<string>('');
+  const [isFiltering, setIsFiltering] = useState(false);
 
   const filteredRequests = useMemo(() => {
     return requests.filter((req) => {
@@ -113,6 +114,12 @@ export default function RequestsTable({ requests, isLoading = false }: RequestsT
 
   useEffect(() => { setPage(1); }, [status, type, search]);
 
+  useEffect(() => {
+    setIsFiltering(true);
+    const timeout = setTimeout(() => setIsFiltering(false), 350);
+    return () => clearTimeout(timeout);
+  }, [status, type, search, dateStart, dateEnd, sort, page]);
+
   const handleSort = (key: keyof Request | 'customId') => {
     setSort(prev =>
       prev.key === key
@@ -130,10 +137,10 @@ export default function RequestsTable({ requests, isLoading = false }: RequestsT
     setDateEnd('');
   };
 
-  if (isLoading) {
+  if (isLoading || isFiltering) {
     return (
-      <div className="overflow-x-auto">
-        <table className="min-w-full border rounded-md bg-white dark:bg-zinc-900">
+      <div className="w-full overflow-x-auto rounded-md border bg-white dark:bg-zinc-900">
+        <table className="min-w-full">
           <thead>
             <tr className="border-b">
               <th className="px-4 py-2 text-left whitespace-nowrap">ID</th>
@@ -159,14 +166,20 @@ export default function RequestsTable({ requests, isLoading = false }: RequestsT
             ))}
           </tbody>
         </table>
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="w-6 h-6 animate-spin text-primary" />
+          <span className="ml-2 text-primary">Filtrando...</span>
+        </div>
       </div>
     );
   }
 
-  if (!requests || requests.length === 0) {
+  if (!requests || requests.length === 0 || totalFiltered === 0) {
     return (
-      <div className="border rounded-md p-4 bg-white dark:bg-zinc-900">
-        <p className="text-center text-muted-foreground">Nenhuma requisição encontrada.</p>
+      <div className="border rounded-md p-8 bg-white dark:bg-zinc-900 flex flex-col items-center justify-center gap-2">
+        <FileQuestion className="w-10 h-10 text-muted-foreground mb-2" />
+        <p className="text-center text-muted-foreground font-medium">Nenhuma requisição encontrada com os filtros atuais.</p>
+        <p className="text-center text-xs text-muted-foreground">Tente ajustar os filtros ou limpar todos para ver mais resultados.</p>
       </div>
     );
   }
