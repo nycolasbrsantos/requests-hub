@@ -1,11 +1,23 @@
 "use client";
 
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 import { signIn } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { FcGoogle } from 'react-icons/fc';
 
 export default function LoginPage() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (status === 'authenticated') {
+      router.replace('/home');
+    }
+  }, [status, router]);
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-muted">
       <Card className="w-full max-w-md shadow-lg">

@@ -13,7 +13,7 @@ export default async function RequestsPage() {
 
   return (
     <PageContainer className="flex items-center justify-center min-h-screen bg-muted">
-      <Card className="shadow-lg w-full max-w-3xl my-8">
+      <Card className="shadow-lg w-full max-w-3xl">
         <CardHeader>
           <Link href="/home">
             <Button variant="outline" className="mb-4 flex items-center gap-2">

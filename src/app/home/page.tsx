@@ -1,7 +1,11 @@
+"use client";
 import { PageContainer } from '@/components/ui/page-container';
 import { ServiceCard } from '../requests/_components/ServiceCard';
+import { useSession } from 'next-auth/react';
 
 export default function ProtectedHomePage() {
+  const { data: session } = useSession();
+  const isAdmin = session?.user.role === 'admin';
   return (
     <PageContainer>
       <div className="flex flex-col items-center justify-center py-12">
@@ -27,8 +31,11 @@ export default function ProtectedHomePage() {
             href="/requests/add?type=maintenance"
           />
         </div>
-        <div className="mt-8">
+        <div className="mt-8 flex flex-col items-center gap-2">
           <a href="/requests" className="inline-block px-6 py-2 bg-primary text-white rounded hover:bg-primary/90 transition">Painel de Requisições</a>
+          {isAdmin && (
+            <a href="/admin/users" className="inline-block px-6 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition">Painel Admin</a>
+          )}
         </div>
       </div>
     </PageContainer>
