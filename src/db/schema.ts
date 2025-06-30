@@ -7,6 +7,7 @@ import {
   text,
   timestamp,
   varchar,
+  json,
 } from 'drizzle-orm/pg-core'
 
 // Enum para os tipos de requisição, para garantir consistência
@@ -68,6 +69,7 @@ export const requests = pgTable('requests', {
 
   // --- Campos específicos para 'Ticket de T.I.' ---
   category: varchar('category', { length: 100 }), // Ex: Hardware, Software, Rede
+  attachments: json('attachments').$type<{ filename: string, uploadedBy: string }[]>().default([]),
 })
 
 // Tabela de usuários

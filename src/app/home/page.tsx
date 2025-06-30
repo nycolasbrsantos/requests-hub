@@ -10,6 +10,9 @@ export default function ProtectedHomePage() {
     <PageContainer>
       <div className="flex flex-col items-center justify-center py-12">
         <h1 className="text-2xl font-bold mb-2 text-center">Bem-vindo(a) ao Portal de Serviços</h1>
+        {session?.user?.name && (
+          <p className="text-lg font-medium text-center mb-1">Olá, {session.user.name}!</p>
+        )}
         <p className="text-muted-foreground mb-8 text-center">Selecione o serviço que deseja solicitar.</p>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 w-full max-w-3xl">
           <ServiceCard

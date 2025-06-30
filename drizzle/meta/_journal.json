@@ -15,6 +15,20 @@
       "when": 1751298096279,
       "tag": "0001_strong_gideon",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1751299220011,
+      "tag": "0002_stiff_echo",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1751299661896,
+      "tag": "0003_unknown_dragon_man",
+      "breakpoints": true
     }
   ]
 }

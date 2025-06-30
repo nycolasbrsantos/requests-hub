@@ -9,6 +9,8 @@ import { toast } from 'sonner'
 import * as z from 'zod'
 import { NumericFormat } from 'react-number-format'
 import { Paperclip } from 'lucide-react'
+import { useRef, useState } from 'react'
+import { Progress } from '@/components/ui/progress'
 
 import { createRequest } from '@/actions/create-request'
 import {
@@ -23,11 +25,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
-const ACCEPTED_FILE_TYPES = [
-  'application/pdf',
-  'image/png',
-  'image/jpeg',
-];
+const MAX_FILES = 5;
 
 const formSchema = z.object({
   productName: z.string().min(2, 'Informe o nome do produto.'),
@@ -36,17 +34,7 @@ const formSchema = z.object({
   supplier: z.string().min(2, 'Informe o fornecedor.'),
   description: z.string().min(5, 'Descreva a necessidade.'),
   priority: z.enum(['low', 'medium', 'high'], { required_error: 'Selecione a prioridade.' }),
-  attachment: z
-    .any()
-    .refine(
-      (file) =>
-        !file ||
-        (file instanceof File && ACCEPTED_FILE_TYPES.includes(file.type)),
-      {
-        message: 'Apenas PDF, PNG ou JPG são permitidos.',
-      }
-    )
-    .optional(),
+  attachments: z.array(z.any()).max(MAX_FILES).optional(),
 })
 
 type FormValues = z.infer<typeof formSchema>
@@ -54,6 +42,8 @@ type FormValues = z.infer<typeof formSchema>
 interface CreateRequestFormProps {
   requesterName: string;
 }
+
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
 export function CreateRequestForm({ requesterName }: CreateRequestFormProps) {
   // 1) Pega ?type= da URL e garante só esses três valores
@@ -72,7 +62,7 @@ export function CreateRequestForm({ requesterName }: CreateRequestFormProps) {
       supplier: '',
       description: '',
       priority: 'medium',
-      attachment: undefined,
+      attachments: [],
     },
   })
 
@@ -87,8 +77,63 @@ export function CreateRequestForm({ requesterName }: CreateRequestFormProps) {
     },
   })
 
-  function onSubmit(values: FormValues) {
-    execute({ ...values, title: values.productName, type: defaultType, requesterName })
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadProgress, setUploadProgress] = useState<number>(0);
+  const [isUploading, setIsUploading] = useState<boolean>(false);
+  const [dragActive, setDragActive] = useState<boolean>(false);
+
+  async function uploadFile(file: File, onProgress?: (percent: number) => void): Promise<string | null> {
+    return new Promise((resolve) => {
+      const xhr = new XMLHttpRequest();
+      const formData = new FormData();
+      formData.append('file', file);
+      xhr.open('POST', '/api/upload');
+      xhr.upload.onprogress = (event) => {
+        if (event.lengthComputable && onProgress) {
+          onProgress(Math.round((event.loaded / event.total) * 100));
+        }
+      };
+      xhr.onload = () => {
+        if (xhr.status === 200) {
+          const data = JSON.parse(xhr.responseText);
+          resolve(data.filename);
+        } else {
+          resolve(null);
+        }
+      };
+      xhr.onerror = () => resolve(null);
+      xhr.send(formData);
+    });
+  }
+
+  async function onSubmit(values: FormValues) {
+    setIsUploading(true);
+    setUploadProgress(0);
+    const attachmentNames: string[] = [];
+    if (values.attachments && values.attachments.length > 0) {
+      if (values.attachments.length > MAX_FILES) {
+        toast.error('Você pode anexar no máximo 5 arquivos.');
+        setIsUploading(false);
+        return;
+      }
+      for (const file of values.attachments) {
+        if (file.size > MAX_FILE_SIZE) {
+          toast.error(`O arquivo ${file.name} excede 10MB.`);
+          setIsUploading(false);
+          return;
+        }
+        const name = await uploadFile(file, (percent) => setUploadProgress(percent));
+        if (!name) {
+          toast.error(`Falha ao enviar o arquivo ${file.name}.`);
+          setIsUploading(false);
+          return;
+        }
+        attachmentNames.push(name);
+      }
+    }
+    execute({ ...values, title: values.productName, type: defaultType, requesterName, attachments: attachmentNames });
+    setIsUploading(false);
+    setUploadProgress(0);
   }
 
   return (
@@ -186,32 +231,75 @@ export function CreateRequestForm({ requesterName }: CreateRequestFormProps) {
         />
         <FormField
           control={form.control}
-          name="attachment"
+          name="attachments"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Anexo (PDF, PNG ou JPG)</FormLabel>
-              <div className="flex items-center gap-2">
-                <label htmlFor="file-upload" className="inline-flex items-center px-3 py-2 bg-muted border rounded cursor-pointer hover:bg-muted/80 transition">
+              <FormLabel>Anexos (até 5 arquivos PDF, PNG ou JPG, cada um até 10MB)</FormLabel>
+              <div
+                className={
+                  `flex flex-col gap-2 border-2 rounded-md p-4 transition-colors ${dragActive ? 'border-primary bg-primary/10' : 'border-muted'}`
+                }
+                onDragOver={e => { e.preventDefault(); setDragActive(true); }}
+                onDragLeave={e => { e.preventDefault(); setDragActive(false); }}
+                onDrop={e => {
+                  e.preventDefault();
+                  setDragActive(false);
+                  const files = Array.from(e.dataTransfer.files ?? []);
+                  const current = field.value || [];
+                  const all = [...current, ...files].slice(0, MAX_FILES);
+                  field.onChange(all);
+                }}
+              >
+                <label htmlFor="file-upload" className="inline-flex items-center px-3 py-2 bg-muted border rounded cursor-pointer hover:bg-muted/80 transition w-fit">
                   <Paperclip className="w-4 h-4 mr-2" />
-                  <span>Selecionar arquivo</span>
+                  <span>Selecionar arquivos</span>
                   <input
                     id="file-upload"
                     type="file"
                     accept=".pdf,image/png,image/jpeg"
                     className="hidden"
-                    onChange={e => field.onChange(e.target.files?.[0])}
+                    multiple
+                    ref={fileInputRef}
+                    onChange={e => {
+                      const files = Array.from(e.target.files ?? []);
+                      const current = field.value || [];
+                      const all = [...current, ...files].slice(0, MAX_FILES);
+                      field.onChange(all);
+                    }}
+                    disabled={isUploading}
                   />
                 </label>
-                {field.value && (
-                  <span className="truncate text-sm text-muted-foreground max-w-[180px]">{field.value.name}</span>
+                <span className="text-xs text-muted-foreground mt-1">Ou arraste e solte arquivos aqui</span>
+                {field.value && field.value.length > 0 && (
+                  <ul className="mt-2 space-y-1">
+                    {field.value.map((f: File, idx: number) => (
+                      <li key={f.name + idx} className="flex items-center gap-2 text-sm text-muted-foreground max-w-[220px] truncate">
+                        {f.type.startsWith('image/') && (
+                          <img src={URL.createObjectURL(f)} alt={f.name} className="w-8 h-8 object-cover rounded mr-2 border" />
+                        )}
+                        <span className="truncate">{f.name}</span>
+                        <span className={`ml-2 text-xs ${f.size > MAX_FILE_SIZE ? 'text-red-500' : 'text-muted-foreground'}`}>{(f.size / 1024 / 1024).toFixed(2)} MB</span>
+                        <button type="button" className="text-red-500 hover:underline ml-2" onClick={() => {
+                          const newFiles = Array.isArray(field.value) ? field.value.filter((_, i) => i !== idx) : [];
+                          field.onChange(newFiles);
+                        }} disabled={isUploading}>Remover</button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {isUploading && (
+                  <div className="mt-2">
+                    <Progress value={uploadProgress} className="h-2" />
+                    <span className="text-xs text-muted-foreground">Enviando arquivos... {uploadProgress}%</span>
+                  </div>
                 )}
               </div>
               <FormMessage />
             </FormItem>
           )}
         />
-        <Button type="submit" disabled={status === 'executing'}>
-          {status === 'executing' ? 'Enviando...' : 'Enviar Requisição'}
+        <Button type="submit" disabled={status === 'executing' || isUploading}>
+          {status === 'executing' || isUploading ? 'Enviando...' : 'Enviar Requisição'}
         </Button>
       </form>
     </Form>

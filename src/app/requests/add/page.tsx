@@ -1,16 +1,16 @@
+'use client'
 import React from 'react'
 import { PageContainer } from '@/components/ui/page-container'
-import { getCurrentUser } from '@/lib/auth'
 import { CreateRequestForm } from './_components/CreateRequestForm'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { useSession } from 'next-auth/react'
 
-export const metadata = { title: 'Criar nova requisição' }
-
-export default async function AddRequestPage() {
-  const user = await getCurrentUser()
+export default function AddRequestPage() {
+  const { data: session } = useSession()
+  const userName = session?.user?.name || ''
   return (
     <PageContainer className="flex items-center justify-center min-h-screen bg-muted">
       <Card className="shadow-lg w-full max-w-3xl my-8">
@@ -24,7 +24,7 @@ export default async function AddRequestPage() {
           <CardTitle className="text-2xl font-bold">Nova Requisição de Compras</CardTitle>
         </CardHeader>
         <CardContent>
-          <CreateRequestForm requesterName={user.name} />
+          <CreateRequestForm requesterName={userName} />
         </CardContent>
       </Card>
     </PageContainer>

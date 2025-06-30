@@ -33,9 +33,12 @@ const handler = async ({
     const seq = String(requestsToday.length + 1).padStart(3, '0');
     const customId = `${dateStr}-${seq}`;
 
+    const attachments = Array.isArray(parsedInput.attachments)
+      ? parsedInput.attachments.map((filename) => ({ filename, uploadedBy: parsedInput.requesterName }))
+      : [];
     const [newRequest] = await db
       .insert(requests)
-      .values({ ...parsedInput, customId })
+      .values({ ...parsedInput, customId, attachments })
       .returning();
 
     revalidatePath('/requests');

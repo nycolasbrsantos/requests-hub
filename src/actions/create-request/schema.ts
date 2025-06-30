@@ -20,4 +20,5 @@ export const createRequestSchema = z.object({
 
   // T.I.
   category: z.string().optional(),
+  attachments: z.array(z.string()).max(5).optional(),
 })

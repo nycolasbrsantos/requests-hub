@@ -6,6 +6,7 @@ import { requests } from '@/db/schema'
 import { actionClient } from '@/lib/safe-actions'
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
+import { Request } from '@/db/schema'
 
 import { updateRequestStatusSchema } from './schema'
 
@@ -43,3 +44,32 @@ export const updateRequestStatus = actionClient
   .action(handler)
 
 export type UpdateRequestStatusAction = typeof updateRequestStatus
+
+export const updateRequestAttachmentsSchema = z.object({
+  id: z.number(),
+  attachments: z.array(z.object({ filename: z.string(), uploadedBy: z.string() })).max(5),
+})
+
+/**
+ * Atualiza os anexos de uma requisição.
+ * @param params.id ID da requisição
+ * @param params.attachments Array de anexos { filename, uploadedBy }
+ */
+export async function updateRequestAttachments(params: { id: number; attachments: { filename: string; uploadedBy: string }[] }): Promise<{ success?: string; error?: string }> {
+  try {
+    const { id, attachments } = params;
+    const [updatedRequest]: Request[] = await db
+      .update(requests)
+      .set({ attachments, updatedAt: new Date() })
+      .where(eq(requests.id, id))
+      .returning();
+    if (!updatedRequest) {
+      return { error: 'Requisição não encontrada.' };
+    }
+    revalidatePath('/requests');
+    return { success: `Anexos da requisição #${id} atualizados!` };
+  } catch (error) {
+    console.error(error);
+    return { error: 'Ocorreu um erro ao atualizar os anexos.' };
+  }
+}
