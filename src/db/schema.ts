@@ -97,6 +97,7 @@ export const files = pgTable('files', {
   size: integer('size').notNull(),
   uploadedBy: varchar('uploaded_by', { length: 256 }).notNull(),
   requestId: integer('request_id').notNull().references(() => requests.id), // FK para requests
+  driveFileId: varchar('drive_file_id', { length: 128 }).notNull(), // ID do arquivo no Google Drive
   createdAt: timestamp('created_at').defaultNow().notNull(),
 })
 
