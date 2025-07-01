@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
-import { files } from '@/db/schema';
+import { files, File } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 
 export async function GET(
@@ -26,7 +26,7 @@ export async function GET(
       return NextResponse.json({ attachments: [] });
     }
     // Gera webViewLink padrão do Drive
-    const result = attachments.map((att: any) => ({
+    const result = attachments.map((att: File) => ({
       id: att.id,
       filename: att.filename,
       originalName: att.originalName,

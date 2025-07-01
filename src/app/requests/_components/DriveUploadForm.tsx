@@ -12,13 +12,17 @@ interface Props {
   onSuccess?: () => void;
 }
 
+interface DriveUploadFormFields {
+  files: FileList;
+}
+
 export function DriveUploadForm({ requestId, uploadedBy, onSuccess }: Props) {
-  const { register, handleSubmit, reset } = useForm();
+  const { register, handleSubmit, reset } = useForm<DriveUploadFormFields>();
   const [isUploading, setIsUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
-  const onSubmit = async (data: any) => {
+  const onSubmit = async (data: DriveUploadFormFields) => {
     setIsUploading(true);
     setProgress(0);
     setError(null);
