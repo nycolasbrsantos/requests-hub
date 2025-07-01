@@ -88,9 +88,24 @@ export const users = pgTable('users', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 })
 
+// Tabela para armazenar arquivos no banco de dados
+export const files = pgTable('files', {
+  id: serial('id').primaryKey(),
+  filename: varchar('filename', { length: 512 }).notNull(),
+  originalName: varchar('original_name', { length: 512 }).notNull(),
+  mimeType: varchar('mime_type', { length: 128 }).notNull(),
+  size: integer('size').notNull(),
+  data: text('data').notNull(), // Dados binários do arquivo (base64)
+  uploadedBy: varchar('uploaded_by', { length: 256 }).notNull(),
+  requestId: integer('request_id').notNull(), // FK para requests
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+})
+
 // Tipos TypeScript que o Drizzle infere do nosso schema.
 // Isso nos dá autocompletar e segurança de tipos em todo o código!
 export type Request = typeof requests.$inferSelect
 export type NewRequest = typeof requests.$inferInsert
 export type User = typeof users.$inferSelect
 export type NewUser = typeof users.$inferInsert
+export type File = typeof files.$inferSelect
+export type NewFile = typeof files.$inferInsert

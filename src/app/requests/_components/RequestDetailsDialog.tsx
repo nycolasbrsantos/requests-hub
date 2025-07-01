@@ -285,7 +285,7 @@ export default function RequestDetailsDialog({ requestId, open, onOpenChange }: 
                       <div className="flex items-center gap-2 flex-1 min-w-0">
                         {getFileIcon(att.filename)}
                         <a 
-                          href={`/uploads/${att.filename}`} 
+                          href={`/api/files/${encodeURIComponent(att.filename)}`} 
                           target="_blank" 
                           rel="noopener noreferrer" 
                           className="text-primary underline truncate hover:text-primary/80"
