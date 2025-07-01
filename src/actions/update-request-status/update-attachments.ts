@@ -3,7 +3,7 @@ import { db } from '@/db';
 import { requests, Request } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 
-export async function updateRequestAttachments(params: { id: number; attachments: { filename: string; uploadedBy: string }[]; changedBy: string; comment: string; action: 'add' | 'remove' }): Promise<{ success?: string; error?: string }> {
+export async function updateRequestAttachments(params: { id: number; attachments: { id: string; name: string; webViewLink?: string }[]; changedBy: string; comment: string; action: 'add' | 'remove' }): Promise<{ success?: string; error?: string }> {
   try {
     const { id, attachments, changedBy, comment, action } = params;
     // Buscar statusHistory mais recente do banco

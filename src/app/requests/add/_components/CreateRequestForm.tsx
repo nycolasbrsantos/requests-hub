@@ -10,6 +10,8 @@ import * as z from 'zod'
 import { NumericFormat } from 'react-number-format'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { useState } from 'react'
+import { Loader2, Paperclip, XCircle } from 'lucide-react'
 
 import { createRequest } from '@/actions/create-request'
 import {
@@ -108,10 +110,13 @@ export function CreateRequestForm({ requesterName }: CreateRequestFormProps) {
     },
   })
 
+  const [uploading, setUploading] = useState(false);
+  const [attachmentsPreview, setAttachmentsPreview] = useState<File[]>([]);
+
   async function onSubmit(values: FormValues) {
     let attachments: { id: string; name: string; webViewLink?: string }[] = [];
     if (Array.isArray(values.attachments) && values.attachments.length > 0) {
-      // 1. Upload dos arquivos para o Drive antes de criar a requisição
+      setUploading(true);
       const formData = new FormData();
       values.attachments.forEach((file: File) => formData.append('files', file));
       try {
@@ -122,7 +127,6 @@ export function CreateRequestForm({ requesterName }: CreateRequestFormProps) {
         if (!res.ok) {
           throw new Error('Falha ao enviar anexos.');
         }
-        // Espera que o backend retorne um array de objetos { id, name, webViewLink }
         const uploaded = await res.json();
         if (!Array.isArray(uploaded)) {
           throw new Error('Resposta inesperada do upload.');
@@ -132,8 +136,10 @@ export function CreateRequestForm({ requesterName }: CreateRequestFormProps) {
         let errorMsg = 'Erro ao fazer upload dos anexos.';
         if (e instanceof Error) errorMsg = e.message;
         toast.error(errorMsg);
+        setUploading(false);
         return;
       }
+      setUploading(false);
     }
     await execute({
       ...values,
@@ -142,6 +148,7 @@ export function CreateRequestForm({ requesterName }: CreateRequestFormProps) {
       requesterName,
       attachments,
     });
+    setAttachmentsPreview([]);
   }
 
   return (
@@ -151,127 +158,156 @@ export function CreateRequestForm({ requesterName }: CreateRequestFormProps) {
         <CardDescription>Preencha os campos abaixo para solicitar uma nova compra, manutenção ou ticket de T.I.</CardDescription>
       </CardHeader>
       <CardContent>
-    <Form {...form}>
+        <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <FormField
-          control={form.control}
-          name="productName"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel htmlFor="productName">Produto</FormLabel>
-              <Input id="productName" {...field} />
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="quantity"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel htmlFor="quantity">Quantidade</FormLabel>
-              <Input id="quantity" type="number" min={1} placeholder="0" {...field} />
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="unitPrice"
-          render={() => (
-            <FormItem>
-              <FormLabel htmlFor="unitPrice">Preço Unitário</FormLabel>
-              <Controller
-                control={form.control}
-                name="unitPrice"
-                render={({ field }) => (
-                  <NumericFormat
-                    customInput={Input}
-                    id="unitPrice"
-                    prefix="R$ "
-                    decimalSeparator="," 
-                    thousandSeparator="."
-                    allowNegative={false}
-                    value={field.value}
-                    onValueChange={(values) => field.onChange(values.value)}
-                    placeholder="0,00"
-                  />
-                )}
-              />
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="supplier"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel htmlFor="supplier">Fornecedor</FormLabel>
-              <Input id="supplier" placeholder="Ex: Dell Computadores" {...field} />
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="priority"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel htmlFor="priority">Prioridade</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <SelectTrigger id="priority">
-                  <SelectValue placeholder="Selecione a prioridade" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="low">Baixa</SelectItem>
-                  <SelectItem value="medium">Média</SelectItem>
-                  <SelectItem value="high">Alta</SelectItem>
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-            </div>
-        <FormField
-          control={form.control}
-          name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel htmlFor="description">Descrição</FormLabel>
-              <Textarea id="description" placeholder="Descreva a necessidade da compra, manutenção ou ticket..." {...field} />
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-            <div className="pt-2 pb-4 border-t mt-4">
-              <div className="font-medium mb-2">Anexos (opcional)</div>
               <FormField
                 control={form.control}
-                name="attachments"
+                name="productName"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel htmlFor="attachments">Adicionar Anexos</FormLabel>
-                    <Input
-                      id="attachments"
-                      type="file"
-                      multiple
-                      onChange={e => field.onChange(Array.from(e.target.files || []))}
-                      className="block w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                    <FormLabel htmlFor="productName">Produto</FormLabel>
+                    <Input id="productName" {...field} />
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="quantity"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel htmlFor="quantity">Quantidade</FormLabel>
+                    <Input id="quantity" type="number" min={1} placeholder="0" {...field} />
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="unitPrice"
+                render={() => (
+                  <FormItem>
+                    <FormLabel htmlFor="unitPrice">Preço Unitário</FormLabel>
+                    <Controller
+                      control={form.control}
+                      name="unitPrice"
+                      render={({ field }) => (
+                        <NumericFormat
+                          customInput={Input}
+                          id="unitPrice"
+                          prefix="R$ "
+                          decimalSeparator="," 
+                          thousandSeparator="."
+                          allowNegative={false}
+                          value={field.value}
+                          onValueChange={(values) => field.onChange(values.value)}
+                          placeholder="0,00"
+                        />
+                      )}
                     />
-                    <div className="text-xs text-muted-foreground mt-1">Selecione um ou mais arquivos para anexar à requisição.</div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="supplier"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel htmlFor="supplier">Fornecedor</FormLabel>
+                    <Input id="supplier" placeholder="Ex: Dell Computadores" {...field} />
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="priority"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel htmlFor="priority">Prioridade</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <SelectTrigger id="priority">
+                        <SelectValue placeholder="Selecione a prioridade" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="low">Baixa</SelectItem>
+                        <SelectItem value="medium">Média</SelectItem>
+                        <SelectItem value="high">Alta</SelectItem>
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
               />
             </div>
-            <Button type="submit" disabled={status === 'executing'} className="w-full h-12 text-base font-semibold">
-              {status === 'executing' ? 'Enviando...' : 'Enviar Requisição'}
-        </Button>
-      </form>
-    </Form>
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel htmlFor="description">Descrição</FormLabel>
+                  <Textarea id="description" placeholder="Descreva a necessidade da compra, manutenção ou ticket..." {...field} />
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="attachments"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel htmlFor="attachments">Anexos</FormLabel>
+                  <Input
+                    id="attachments"
+                    type="file"
+                    multiple
+                    accept="application/pdf,image/*"
+                    disabled={uploading || status === 'executing'}
+                    onChange={e => {
+                      const files = Array.from(e.target.files || []);
+                      field.onChange(files);
+                      setAttachmentsPreview(files);
+                    }}
+                  />
+                  <FormMessage />
+                  {attachmentsPreview.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {attachmentsPreview.map((file, idx) => (
+                        <div key={idx} className="flex items-center gap-1 bg-muted px-2 py-1 rounded text-xs">
+                          <Paperclip className="w-3 h-3 mr-1" />
+                          {file.name}
+                          <button
+                            type="button"
+                            aria-label={`Remover anexo ${file.name}`}
+                            className="ml-1 text-red-500 hover:text-red-700"
+                            onClick={() => {
+                              const newFiles = attachmentsPreview.filter((_, i) => i !== idx);
+                              setAttachmentsPreview(newFiles);
+                              field.onChange(newFiles);
+                            }}
+                          >
+                            <XCircle className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {uploading && (
+                    <div className="flex items-center gap-2 mt-2 text-primary text-xs">
+                      <Loader2 className="w-4 h-4 animate-spin" /> Enviando anexos...
+                    </div>
+                  )}
+                </FormItem>
+              )}
+            />
+            <Button type="submit" disabled={uploading || status === 'executing'} className="w-full">
+              {uploading || status === 'executing' ? <Loader2 className="w-4 h-4 animate-spin inline mr-2" /> : null}
+              {uploading ? 'Enviando...' : status === 'executing' ? 'Salvando...' : 'Salvar Requisição'}
+            </Button>
+          </form>
+        </Form>
       </CardContent>
     </Card>
   )

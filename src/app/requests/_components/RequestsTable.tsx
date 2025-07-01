@@ -153,6 +153,7 @@ export default function RequestsTable({ requests, isLoading = false }: RequestsT
               <th className="px-4 py-2 text-left whitespace-nowrap">Status</th>
               <th className="px-4 py-2 text-left whitespace-nowrap max-w-xs">Solicitante</th>
               <th className="px-4 py-2 text-left whitespace-nowrap">Data</th>
+              <th className="px-4 py-2 text-left whitespace-nowrap">Anexos</th>
               <th className="px-4 py-2 text-left whitespace-nowrap">Ações</th>
             </tr>
           </thead>
@@ -164,6 +165,7 @@ export default function RequestsTable({ requests, isLoading = false }: RequestsT
                 <td className="px-4 py-2"><Skeleton className="h-4 w-20" /></td>
                 <td className="px-4 py-2"><Skeleton className="h-4 w-20" /></td>
                 <td className="px-4 py-2 max-w-xs"><Skeleton className="h-4 w-24" /></td>
+                <td className="px-4 py-2"><Skeleton className="h-4 w-24" /></td>
                 <td className="px-4 py-2"><Skeleton className="h-4 w-24" /></td>
                 <td className="px-4 py-2"><Skeleton className="h-8 w-16 rounded" /></td>
               </tr>
@@ -276,6 +278,7 @@ export default function RequestsTable({ requests, isLoading = false }: RequestsT
                 <th className="px-4 py-2 text-left whitespace-nowrap cursor-pointer select-none" onClick={() => handleSort('createdAt')}>
                   Data {sort.key === 'createdAt' ? (sort.direction === 'asc' ? <ArrowUp className="inline w-4 h-4 ml-1 text-primary" /> : <ArrowDown className="inline w-4 h-4 ml-1 text-primary" />) : <ArrowUpDown className="inline w-4 h-4 ml-1 text-muted-foreground" />}
                 </th>
+                <th className="px-4 py-2 text-left whitespace-nowrap">Anexos</th>
                 <th className="px-4 py-2 text-left whitespace-nowrap">Ações</th>
               </tr>
             </thead>
@@ -288,6 +291,23 @@ export default function RequestsTable({ requests, isLoading = false }: RequestsT
                   <td className="px-4 py-2 whitespace-nowrap capitalize"><StatusBadge status={req.status as 'pending' | 'approved' | 'rejected' | 'in_progress' | 'completed'} /></td>
                   <td className="px-4 py-2 whitespace-nowrap max-w-xs truncate">{req.requesterName}</td>
                   <td className="px-4 py-2 whitespace-nowrap">{dayjs(req.createdAt).format('DD/MM/YYYY HH:mm')}</td>
+                  <td className="px-4 py-2 whitespace-nowrap text-center">
+                    {Array.isArray(req.attachments) && req.attachments.length > 0 ? (
+                      <a
+                        href={req.attachments[0].webViewLink || '#'}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label={`Ver anexo ${req.attachments[0].name}`}
+                        className="inline-flex items-center gap-1 text-primary hover:underline"
+                      >
+                        <Paperclip className="w-4 h-4" />
+                        {req.attachments[0].name}
+                        {req.attachments.length > 1 && <span className="ml-1">+{req.attachments.length - 1}</span>}
+                      </a>
+                    ) : (
+                      <span className="text-muted-foreground">-</span>
+                    )}
+                  </td>
                   <td className="px-4 py-2 whitespace-nowrap space-x-2">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>

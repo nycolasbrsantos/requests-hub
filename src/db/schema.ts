@@ -69,7 +69,7 @@ export const requests = pgTable('requests', {
 
   // --- Campos específicos para 'Ticket de T.I.' ---
   category: varchar('category', { length: 100 }), // Ex: Hardware, Software, Rede
-  attachments: json('attachments').$type<{ filename: string, uploadedBy: string }[]>().default([]),
+  attachments: json('attachments').$type<{ id: string; name: string; webViewLink?: string }[]>().default([]),
   statusHistory: json('status_history').$type<{
     status: 'pending' | 'approved' | 'rejected' | 'in_progress' | 'completed' | 'attachment_added' | 'attachment_removed';
     changedAt: string;

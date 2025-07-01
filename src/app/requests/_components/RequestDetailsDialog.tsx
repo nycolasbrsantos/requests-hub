@@ -10,12 +10,11 @@ import { useSession } from 'next-auth/react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DriveUploadForm } from './DriveUploadForm';
-import { DriveAttachmentsList } from './DriveAttachmentsList';
-import { useDriveAttachments } from './useDriveAttachments';
 
 interface Attachment {
-  filename: string;
-  uploadedBy: string;
+  id: string;
+  name: string;
+  webViewLink?: string;
 }
 
 interface StatusHistoryItem {
@@ -64,8 +63,6 @@ export default function RequestDetailsDialog({ requestId, open, onOpenChange }: 
   const [removingAtt, setRemovingAtt] = useState<Attachment | null>(null);
   const [comment, setComment] = useState('');
   const [isRemoving, setIsRemoving] = useState(false);
-  const userName = session?.user?.name ?? 'Desconhecido';
-  const { attachments: driveAttachments, loading: loadingDriveAttachments, error: errorDriveAttachments } = useDriveAttachments(requestId);
 
   useEffect(() => {
     if (open) {
@@ -168,15 +165,55 @@ export default function RequestDetailsDialog({ requestId, open, onOpenChange }: 
             )}
             
             {/* NOVO BLOCO DE ANEXOS GOOGLE DRIVE */}
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Paperclip className="w-4 h-4 text-muted-foreground" />
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Paperclip className="w-4 h-4 text-muted-foreground" />
                 <b className="text-sm">Anexos</b>
               </div>
-              <DriveUploadForm requestId={requestId} uploadedBy={userName} onSuccess={() => {}} />
-              {loadingDriveAttachments && <div className="text-xs text-muted-foreground">Carregando anexos...</div>}
-              {errorDriveAttachments && <div className="text-xs text-red-500">{errorDriveAttachments}</div>}
-              <DriveAttachmentsList requestId={requestId} attachments={driveAttachments} onDelete={() => {}} />
+              {/* Formulário de upload de anexos */}
+              <DriveUploadForm
+                requestId={requestId}
+                uploadedBy={session?.user?.name ?? 'Desconhecido'}
+                onSuccess={() => {
+                  setLoading(true);
+                  fetch(`/api/requests/${requestId}`)
+                    .then(res => res.json())
+                    .then(data => setRequest(data))
+                    .finally(() => setLoading(false));
+                }}
+              />
+              {/* Lista de anexos */}
+              {request.attachments && request.attachments.length > 0 ? (
+                <ul className="space-y-1">
+                  {request.attachments.map((att) => (
+                    <li key={att.id} className="flex items-center gap-2">
+                      <a
+                        href={att.webViewLink || '#'}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary hover:underline flex items-center gap-1"
+                        aria-label={`Abrir anexo ${att.name}`}
+                      >
+                        <Paperclip className="w-4 h-4" />
+                        {att.name}
+                      </a>
+                      {/* Botão de remover, se permitido */}
+                      {/*
+                      <button
+                        type="button"
+                        className="ml-1 text-red-500 hover:text-red-700"
+                        aria-label={`Remover anexo ${att.name}`}
+                        onClick={() => setRemovingAtt(att)}
+                      >
+                        <XCircle className="w-4 h-4" />
+                      </button>
+                      */}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <div className="text-xs text-muted-foreground">Nenhum anexo enviado.</div>
+              )}
             </div>
             
             <div className="space-y-2">
@@ -247,7 +284,7 @@ export default function RequestDetailsDialog({ requestId, open, onOpenChange }: 
               </button>
               <button className="px-4 py-2 bg-destructive text-white rounded hover:bg-destructive/90 transition" disabled={!comment.trim() || isRemoving} onClick={async () => {
                 setIsRemoving(true);
-                const filtered = (request!.attachments).filter(a => a.filename !== removingAtt!.filename || a.uploadedBy !== removingAtt!.uploadedBy);
+                const filtered = (request!.attachments).filter(a => a.id !== removingAtt!.id);
                 await updateRequestAttachments({
                   id: requestId,
                   attachments: filtered,
