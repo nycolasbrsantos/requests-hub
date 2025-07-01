@@ -1,0 +1,1 @@
+ALTER TABLE files ADD COLUMN drive_file_id varchar(128) NOT NULL;
