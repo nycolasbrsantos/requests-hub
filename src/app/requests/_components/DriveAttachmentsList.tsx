@@ -18,21 +18,21 @@ interface Props {
 }
 
 export function DriveAttachmentsList({ requestId, attachments, onDelete }: Props) {
-  const [deleting, setDeleting] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<number | null>(null);
 
-  const handleDelete = async (fileId: string) => {
+  const handleDelete = async (fileId: number) => {
     setDeleting(fileId);
     const res = await fetch(`/api/requests/${requestId}/files/${fileId}`, {
       method: "DELETE",
     });
-    if (res.ok && onDelete) onDelete(fileId);
+    if (res.ok && onDelete) onDelete(String(fileId));
     setDeleting(null);
   };
 
   return (
     <div className="space-y-2">
       {attachments.map((att) => (
-        <div key={att.filename} className="flex items-center gap-2">
+        <div key={att.id} className="flex items-center gap-2">
           <a
             href={att.webViewLink}
             target="_blank"
@@ -46,10 +46,10 @@ export function DriveAttachmentsList({ requestId, attachments, onDelete }: Props
           <Button
             size="sm"
             variant="destructive"
-            disabled={deleting === att.filename}
-            onClick={() => handleDelete(att.filename)}
+            disabled={deleting === att.id}
+            onClick={() => handleDelete(att.id)}
           >
-            {deleting === att.filename ? "Removendo..." : "Remover"}
+            {deleting === att.id ? "Removendo..." : "Remover"}
           </Button>
         </div>
       ))}
