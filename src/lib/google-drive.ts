@@ -1,5 +1,6 @@
 import { google } from 'googleapis';
 import path from 'path';
+import { Readable } from 'stream';
 
 const SCOPES = ['https://www.googleapis.com/auth/drive.file'];
 const KEYFILE = process.env.GOOGLE_SERVICE_ACCOUNT_KEYFILE || 'google-service-account.json';
@@ -77,7 +78,7 @@ export async function uploadFileToFolder(
   }
   const media = {
     mimeType,
-    body: fileBuffer,
+    body: Readable.from(fileBuffer),
   };
   const res = await drive.files.create({
     requestBody,
