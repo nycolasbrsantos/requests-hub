@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from 'next/server';
 import { deleteFile } from '@/lib/google-drive';
 import { db } from '@/db';
@@ -6,11 +7,11 @@ import { eq } from 'drizzle-orm';
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { requestId: string; fileId: string } }
+  context: any
 ) {
   try {
-    const requestId = Number(params.requestId);
-    const fileId = Number(params.fileId);
+    const requestId = Number(context.params.requestId);
+    const fileId = Number(context.params.fileId);
     if (isNaN(requestId) || isNaN(fileId)) {
       return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
     }
@@ -70,4 +71,4 @@ export async function DELETE(
     console.error(error);
     return NextResponse.json({ error: 'Erro ao remover arquivo.' }, { status: 500 });
   }
-} 
+}

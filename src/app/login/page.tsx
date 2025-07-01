@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { FcGoogle } from 'react-icons/fc';
 
 export default function LoginPage() {
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const router = useRouter();
 
   useEffect(() => {
@@ -38,4 +38,4 @@ export default function LoginPage() {
       </Card>
     </div>
   );
-} 
+}

@@ -36,20 +36,34 @@ const handler = async ({
     const attachments = Array.isArray(parsedInput.attachments)
       ? parsedInput.attachments.map((filename) => ({ filename, uploadedBy: parsedInput.requesterName }))
       : [];
+
+    // LOGS DE DEPURAÇÃO
+    console.log('parsedInput:', parsedInput);
+    console.log('customId:', customId);
+    console.log('insert object:', { ...parsedInput, customId, attachments });
+
     const [newRequest] = await db
       .insert(requests)
-      .values({ ...parsedInput, customId, attachments })
+      .values({
+        ...parsedInput,
+        customId,
+        attachments,
+        // Garante que unitPrice seja string (Drizzle espera string para decimal)
+        unitPrice: parsedInput.unitPrice ? String(parsedInput.unitPrice) : undefined,
+      })
       .returning();
 
     revalidatePath('/requests');
 
     return {
       success: `Requisição ${newRequest.customId} criada com sucesso!`,
+      id: newRequest.id,
     };
   } catch (error) {
-    console.error(error);
+    console.error('Erro detalhado ao criar requisição:', error);
     return {
       error: 'Ocorreu um erro no servidor. Não foi possível criar a requisição.',
+      details: String(error),
     };
   }
 }

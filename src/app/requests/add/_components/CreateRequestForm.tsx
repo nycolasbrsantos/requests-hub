@@ -10,7 +10,6 @@ import * as z from 'zod'
 import { NumericFormat } from 'react-number-format'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { DriveUploadForm } from '../../_components/DriveUploadForm'
 
 import { createRequest } from '@/actions/create-request'
 import {
@@ -65,18 +64,84 @@ export function CreateRequestForm({ requesterName }: CreateRequestFormProps) {
 
   // 3) useAction sem genéricos, com callbacks tipados
   const { execute, status } = useAction(createRequest, {
-    onSuccess: () => {
-      toast.success('Requisição criada com sucesso!')
-      form.reset()
+    onSuccess: async (result) => {
+      console.log('onSuccess result:', result);
+      if (result?.data && result.data.id && form) {
+        const attachments = form.getValues("attachments") || [];
+        if (Array.isArray(attachments) && attachments.length > 0) {
+          const formData = new FormData();
+          attachments.forEach((file: File) => formData.append('files', file));
+          await fetch(`/api/requests/${result.data.id}/attachments`, {
+            method: 'POST',
+            body: formData,
+          });
+        }
+        toast.success('Requisição criada com sucesso!');
+        form.reset();
+      } else if (!result?.data?.id) {
+        toast.error('Erro ao criar requisição: ID não retornado.');
+      } else {
+        toast.success('Requisição criada com sucesso!');
+        form.reset();
+      }
     },
-    onError: () => {
-      toast.error('Erro ao criar requisição.')
+    onError: (error) => {
+      console.error('Erro na action:', error);
+      // Tenta extrair mensagem de validação do Zod
+      const validation = error?.error?.validationErrors;
+      const serverError = error?.error?.serverError || error?.error;
+      let msg = '';
+      function hasErrors(obj: unknown): obj is { _errors: string[] } {
+        return !!obj && typeof obj === 'object' && '_errors' in obj && Array.isArray((obj as { _errors?: unknown })._errors);
+      }
+      if (validation) {
+        msg = Object.values(validation)
+          .map((v) => hasErrors(v) ? v._errors.join(', ') : undefined)
+          .filter(Boolean)
+          .join(' | ');
+      } else if (serverError) {
+        msg = typeof serverError === 'string' ? serverError : JSON.stringify(serverError);
+      } else {
+        msg = JSON.stringify(error);
+      }
+      toast.error('Erro ao criar requisição: ' + msg);
     },
   })
 
   async function onSubmit(values: FormValues) {
-    // Cria a requisição normalmente
-    await execute({ ...values, title: values.productName, type: defaultType, requesterName });
+    let attachments: { id: string; name: string; webViewLink?: string }[] = [];
+    if (Array.isArray(values.attachments) && values.attachments.length > 0) {
+      // 1. Upload dos arquivos para o Drive antes de criar a requisição
+      const formData = new FormData();
+      values.attachments.forEach((file: File) => formData.append('files', file));
+      try {
+        const res = await fetch('/api/upload/upload-temp', {
+          method: 'POST',
+          body: formData,
+        });
+        if (!res.ok) {
+          throw new Error('Falha ao enviar anexos.');
+        }
+        // Espera que o backend retorne um array de objetos { id, name, webViewLink }
+        const uploaded = await res.json();
+        if (!Array.isArray(uploaded)) {
+          throw new Error('Resposta inesperada do upload.');
+        }
+        attachments = uploaded;
+      } catch (e: unknown) {
+        let errorMsg = 'Erro ao fazer upload dos anexos.';
+        if (e instanceof Error) errorMsg = e.message;
+        toast.error(errorMsg);
+        return;
+      }
+    }
+    await execute({
+      ...values,
+      title: values.productName,
+      type: defaultType,
+      requesterName,
+      attachments,
+    });
   }
 
   return (
@@ -86,110 +151,125 @@ export function CreateRequestForm({ requesterName }: CreateRequestFormProps) {
         <CardDescription>Preencha os campos abaixo para solicitar uma nova compra, manutenção ou ticket de T.I.</CardDescription>
       </CardHeader>
       <CardContent>
-        <Form {...form}>
+    <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="productName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Produto</FormLabel>
-                    <Input placeholder="Ex: Notebook Dell" {...field} />
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="quantity"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Quantidade</FormLabel>
-                    <Input type="number" min={1} placeholder="0" {...field} />
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
+        <FormField
+          control={form.control}
+          name="productName"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Produto</FormLabel>
+              <Input placeholder="Ex: Notebook Dell" {...field} />
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="quantity"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Quantidade</FormLabel>
+              <Input type="number" min={1} placeholder="0" {...field} />
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="unitPrice"
+          render={() => (
+            <FormItem>
+              <FormLabel>Preço Unitário</FormLabel>
+              <Controller
                 control={form.control}
                 name="unitPrice"
-                render={() => (
-                  <FormItem>
-                    <FormLabel>Preço Unitário</FormLabel>
-                    <Controller
-                      control={form.control}
-                      name="unitPrice"
-                      render={({ field }) => (
-                        <NumericFormat
-                          customInput={Input}
-                          prefix="R$ "
-                          decimalSeparator="," 
-                          thousandSeparator="."
-                          allowNegative={false}
-                          value={field.value}
-                          onValueChange={(values) => field.onChange(values.value)}
-                          placeholder="0,00"
-                        />
-                      )}
-                    />
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="supplier"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Fornecedor</FormLabel>
-                    <Input placeholder="Ex: Dell Computadores" {...field} />
-                    <FormMessage />
-                  </FormItem>
+                  <NumericFormat
+                    customInput={Input}
+                    prefix="R$ "
+                    decimalSeparator="," 
+                    thousandSeparator="."
+                    allowNegative={false}
+                    value={field.value}
+                    onValueChange={(values) => field.onChange(values.value)}
+                    placeholder="0,00"
+                  />
                 )}
               />
-              <FormField
-                control={form.control}
-                name="priority"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Prioridade</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione a prioridade" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="low">Baixa</SelectItem>
-                        <SelectItem value="medium">Média</SelectItem>
-                        <SelectItem value="high">Alta</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="supplier"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Fornecedor</FormLabel>
+              <Input placeholder="Ex: Dell Computadores" {...field} />
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="priority"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Prioridade</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione a prioridade" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="low">Baixa</SelectItem>
+                  <SelectItem value="medium">Média</SelectItem>
+                  <SelectItem value="high">Alta</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
             </div>
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Descrição</FormLabel>
+        <FormField
+          control={form.control}
+          name="description"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Descrição</FormLabel>
                   <Textarea placeholder="Descreva a necessidade da compra, manutenção ou ticket..." {...field} />
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+              <FormMessage />
+            </FormItem>
+          )}
+        />
             <div className="pt-2 pb-4 border-t mt-4">
               <div className="font-medium mb-2">Anexos (opcional)</div>
-              {/* Upload de anexos apenas via Google Drive */}
-              <DriveUploadForm requestId={0} uploadedBy={requesterName} />
+              <FormField
+                control={form.control}
+                name="attachments"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Adicionar Anexos</FormLabel>
+                    <Input
+                      type="file"
+                      multiple
+                      onChange={e => field.onChange(Array.from(e.target.files || []))}
+                      className="block w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                    />
+                    <div className="text-xs text-muted-foreground mt-1">Selecione um ou mais arquivos para anexar à requisição.</div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
             <Button type="submit" disabled={status === 'executing'} className="w-full h-12 text-base font-semibold">
               {status === 'executing' ? 'Enviando...' : 'Enviar Requisição'}
-            </Button>
-          </form>
-        </Form>
+        </Button>
+      </form>
+    </Form>
       </CardContent>
     </Card>
   )

@@ -168,9 +168,9 @@ export default function RequestDetailsDialog({ requestId, open, onOpenChange }: 
             )}
             
             {/* NOVO BLOCO DE ANEXOS GOOGLE DRIVE */}
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <Paperclip className="w-4 h-4 text-muted-foreground" />
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Paperclip className="w-4 h-4 text-muted-foreground" />
                 <b className="text-sm">Anexos</b>
               </div>
               <DriveUploadForm requestId={requestId} uploadedBy={userName} onSuccess={() => {}} />

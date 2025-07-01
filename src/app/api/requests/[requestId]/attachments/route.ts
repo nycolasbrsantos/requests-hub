@@ -1,15 +1,16 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
 import { files, File } from '@/db/schema';
 import { eq } from 'drizzle-orm';
+import { uploadFileToFolder } from '@/lib/google-drive';
 
 export async function GET(
   req: NextRequest,
-  context: { params: { requestId: string } }
+  context: any
 ) {
   try {
-    const { params } = context;
-    const { requestId } = await params;
+    const requestId = context.params.requestId;
     const reqIdNum = Number(requestId);
     if (isNaN(reqIdNum)) {
       return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
@@ -39,4 +40,63 @@ export async function GET(
     console.error('Erro detalhado na rota de anexos:', error);
     return NextResponse.json({ error: 'Erro ao buscar anexos.', details: String(error) }, { status: 500 });
   }
-} 
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function POST(
+  req: NextRequest,
+  context: any
+) {
+  try {
+    const requestId = context.params.requestId;
+    const reqIdNum = Number(requestId);
+    if (isNaN(reqIdNum)) {
+      return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
+    }
+    // Parse multipart form
+    const formData = await req.formData();
+    const filesData = formData.getAll('files');
+    const uploadedBy = formData.get('uploadedBy')?.toString() || 'Desconhecido';
+    if (!filesData || filesData.length === 0) {
+      return NextResponse.json({ error: 'Nenhum arquivo enviado.' }, { status: 400 });
+    }
+    // Buscar pasta do Google Drive associada à requisição
+    // Supondo que o ID da pasta seja igual ao ID da requisição (ajuste se necessário)
+    const driveFolderId = requestId;
+    const results = [];
+    for (const file of filesData) {
+      if (typeof file === 'string') continue;
+      const arrayBuffer = await file.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+      // Upload para o Google Drive
+      const driveFile = await uploadFileToFolder(
+        buffer,
+        file.name,
+        file.type,
+        driveFolderId
+      );
+      // Salvar metadados no banco
+      const [dbFile] = await db.insert(files).values({
+        filename: String(file.name),
+        originalName: String(file.name),
+        mimeType: String(file.type),
+        size: Number(file.size),
+        uploadedBy: String(uploadedBy),
+        requestId: reqIdNum,
+        driveFileId: String(driveFile.id),
+      }).returning();
+      results.push({
+        id: dbFile.id,
+        filename: dbFile.filename,
+        originalName: dbFile.originalName,
+        mimeType: dbFile.mimeType,
+        uploadedBy: dbFile.uploadedBy,
+        webViewLink: driveFile.webViewLink || '',
+      });
+    }
+    return NextResponse.json({ success: true, files: results });
+  } catch (error) {
+    console.error('Erro detalhado no upload de anexos:', error);
+    return NextResponse.json({ error: 'Erro ao fazer upload de anexos.', details: String(error) }, { status: 500 });
+  }
+}
