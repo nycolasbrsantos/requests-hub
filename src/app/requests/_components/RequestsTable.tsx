@@ -16,6 +16,8 @@ import { toast } from 'sonner';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { AnimatePresence, motion } from 'framer-motion';
+import { updateRequestStatus } from '@/actions/update-request-status';
+import { useAction } from 'next-safe-action/hooks';
 
 interface RequestsTableProps {
   requests: Request[];
@@ -60,6 +62,16 @@ export default function RequestsTable({ requests, isLoading = false }: RequestsT
   const [dateEnd, setDateEnd] = useState<string>('');
   const [isFiltering, setIsFiltering] = useState(false);
   const [openHistoryId, setOpenHistoryId] = useState<number | null>(null);
+
+  const { execute: executeUpdateStatus, status: updateStatusState } = useAction(updateRequestStatus, {
+    onSuccess: (data) => {
+      if (data.data && 'success' in data.data && data.data.success) toast.success(data.data.success, { icon: <CheckCircle2 className="text-green-500" /> });
+      if (data.data && 'error' in data.data && data.data.error) toast.error(data.data.error, { icon: <XCircle className="text-red-500" /> });
+    },
+    onError: () => {
+      toast.error('Erro ao atualizar status.', { icon: <XCircle className="text-red-500" /> });
+    },
+  });
 
   const filteredRequests = useMemo(() => {
     return requests.filter((req) => {
@@ -312,22 +324,54 @@ export default function RequestsTable({ requests, isLoading = false }: RequestsT
                           <Clock className="w-4 h-4 mr-2 text-muted-foreground" /> Ver histórico
                         </DropdownMenuItem>
                         {(role === 'admin' || role === 'supervisor') && (
-                          <DropdownMenuItem onClick={() => toast.info(`Atualizar status da requisição #${req.id}`, { icon: <Info className="text-blue-500" />, description: 'Você pode atualizar o status para Em andamento.' })}>
+                          <DropdownMenuItem
+                            disabled={updateStatusState === 'executing'}
+                            onClick={() => executeUpdateStatus({ id: req.id, status: 'in_progress' })}
+                          >
+                            {updateStatusState === 'executing' ? (
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            ) : (
+                              <Info className="w-4 h-4 mr-2 text-blue-500" />
+                            )}
                             Atualizar Status para &quot;Em andamento&quot;
                           </DropdownMenuItem>
                         )}
                         {(role === 'admin' || role === 'supervisor') && (
-                          <DropdownMenuItem onClick={() => toast.info(`Aprovar requisição #${req.id}`, { icon: <CheckCircle2 className="text-green-500" />, description: 'Aprovará a requisição.' })}>
+                          <DropdownMenuItem
+                            disabled={updateStatusState === 'executing'}
+                            onClick={() => executeUpdateStatus({ id: req.id, status: 'approved' })}
+                          >
+                            {updateStatusState === 'executing' ? (
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            ) : (
+                              <CheckCircle2 className="w-4 h-4 mr-2 text-green-500" />
+                            )}
                             Aprovar
                           </DropdownMenuItem>
                         )}
                         {(role === 'admin' || role === 'supervisor') && (
-                          <DropdownMenuItem onClick={() => toast.info(`Reprovar requisição #${req.id}`, { icon: <XCircle className="text-red-500" />, description: 'Reprovará a requisição.' })}>
+                          <DropdownMenuItem
+                            disabled={updateStatusState === 'executing'}
+                            onClick={() => executeUpdateStatus({ id: req.id, status: 'rejected' })}
+                          >
+                            {updateStatusState === 'executing' ? (
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            ) : (
+                              <XCircle className="w-4 h-4 mr-2 text-red-500" />
+                            )}
                             Reprovar
                           </DropdownMenuItem>
                         )}
                         {(role === 'admin' || role === 'encarregado') && (
-                          <DropdownMenuItem onClick={() => toast.info(`Finalizar requisição #${req.id}`, { icon: <CheckCircle2 className="text-primary" />, description: 'Finalizará a requisição.' })}>
+                          <DropdownMenuItem
+                            disabled={updateStatusState === 'executing'}
+                            onClick={() => executeUpdateStatus({ id: req.id, status: 'completed' })}
+                          >
+                            {updateStatusState === 'executing' ? (
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            ) : (
+                              <CheckCircle2 className="w-4 h-4 mr-2 text-primary" />
+                            )}
                             Finalizar
                           </DropdownMenuItem>
                         )}
