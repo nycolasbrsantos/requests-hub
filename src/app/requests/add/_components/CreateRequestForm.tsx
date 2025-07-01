@@ -159,8 +159,8 @@ export function CreateRequestForm({ requesterName }: CreateRequestFormProps) {
           name="productName"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Produto</FormLabel>
-              <Input placeholder="Ex: Notebook Dell" {...field} />
+              <FormLabel htmlFor="productName">Produto</FormLabel>
+              <Input id="productName" {...field} />
               <FormMessage />
             </FormItem>
           )}
@@ -170,8 +170,8 @@ export function CreateRequestForm({ requesterName }: CreateRequestFormProps) {
           name="quantity"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Quantidade</FormLabel>
-              <Input type="number" min={1} placeholder="0" {...field} />
+              <FormLabel htmlFor="quantity">Quantidade</FormLabel>
+              <Input id="quantity" type="number" min={1} placeholder="0" {...field} />
               <FormMessage />
             </FormItem>
           )}
@@ -181,13 +181,14 @@ export function CreateRequestForm({ requesterName }: CreateRequestFormProps) {
           name="unitPrice"
           render={() => (
             <FormItem>
-              <FormLabel>Preço Unitário</FormLabel>
+              <FormLabel htmlFor="unitPrice">Preço Unitário</FormLabel>
               <Controller
                 control={form.control}
                 name="unitPrice"
                 render={({ field }) => (
                   <NumericFormat
                     customInput={Input}
+                    id="unitPrice"
                     prefix="R$ "
                     decimalSeparator="," 
                     thousandSeparator="."
@@ -207,8 +208,8 @@ export function CreateRequestForm({ requesterName }: CreateRequestFormProps) {
           name="supplier"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Fornecedor</FormLabel>
-              <Input placeholder="Ex: Dell Computadores" {...field} />
+              <FormLabel htmlFor="supplier">Fornecedor</FormLabel>
+              <Input id="supplier" placeholder="Ex: Dell Computadores" {...field} />
               <FormMessage />
             </FormItem>
           )}
@@ -218,9 +219,9 @@ export function CreateRequestForm({ requesterName }: CreateRequestFormProps) {
           name="priority"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Prioridade</FormLabel>
+              <FormLabel htmlFor="priority">Prioridade</FormLabel>
               <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <SelectTrigger>
+                <SelectTrigger id="priority">
                   <SelectValue placeholder="Selecione a prioridade" />
                 </SelectTrigger>
                 <SelectContent>
@@ -239,8 +240,8 @@ export function CreateRequestForm({ requesterName }: CreateRequestFormProps) {
           name="description"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Descrição</FormLabel>
-                  <Textarea placeholder="Descreva a necessidade da compra, manutenção ou ticket..." {...field} />
+              <FormLabel htmlFor="description">Descrição</FormLabel>
+              <Textarea id="description" placeholder="Descreva a necessidade da compra, manutenção ou ticket..." {...field} />
               <FormMessage />
             </FormItem>
           )}
@@ -252,8 +253,9 @@ export function CreateRequestForm({ requesterName }: CreateRequestFormProps) {
                 name="attachments"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Adicionar Anexos</FormLabel>
+                    <FormLabel htmlFor="attachments">Adicionar Anexos</FormLabel>
                     <Input
+                      id="attachments"
                       type="file"
                       multiple
                       onChange={e => field.onChange(Array.from(e.target.files || []))}

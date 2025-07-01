@@ -5,6 +5,13 @@ import { authOptions } from '../../auth/authOptions';
 
 export const runtime = 'nodejs';
 
+type UploadedFile = {
+  id?: string;
+  name?: string;
+  webViewLink?: string;
+  webContentLink?: string;
+};
+
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session || !session.user?.email) {
@@ -17,7 +24,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json([], { status: 200 });
   }
 
-  const uploaded: any[] = [];
+  const uploaded: UploadedFile[] = [];
   for (const file of files) {
     if (!(file instanceof File)) continue;
     try {
@@ -28,10 +35,10 @@ export async function POST(req: NextRequest) {
       const result = await uploadFileToFolder(buffer, file.name, file.type);
       // Retornar dados relevantes para o frontend
       uploaded.push({
-        id: result.id,
-        name: result.name,
-        webViewLink: result.webViewLink,
-        webContentLink: result.webContentLink,
+        id: result.id ?? undefined,
+        name: result.name ?? undefined,
+        webViewLink: result.webViewLink ?? undefined,
+        webContentLink: result.webContentLink ?? undefined,
       });
     } catch {
       return NextResponse.json({ error: 'Falha ao enviar um ou mais arquivos.' }, { status: 500 });

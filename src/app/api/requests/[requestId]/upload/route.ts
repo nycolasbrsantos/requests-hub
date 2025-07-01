@@ -4,18 +4,18 @@ import { uploadFileToFolder, createFolder, folderExists, getDriveClient } from '
 import { db } from '@/db';
 import { files } from '@/db/schema';
 
-const ROOT_FOLDER_ID = process.env.GOOGLE_DRIVE_ROOT_FOLDER_ID;
+const GOOGLE_DRIVE_ROOT_FOLDER_ID = process.env.GOOGLE_DRIVE_ROOT_FOLDER_ID;
 
 // Função para verificar e obter pasta raiz válida
 async function getValidRootFolderId(): Promise<string> {
-  if (!ROOT_FOLDER_ID) {
+  if (!GOOGLE_DRIVE_ROOT_FOLDER_ID) {
     throw new Error('GOOGLE_DRIVE_ROOT_FOLDER_ID não está configurado no .env.local');
   }
-  const exists = await folderExists(ROOT_FOLDER_ID);
+  const exists = await folderExists(GOOGLE_DRIVE_ROOT_FOLDER_ID);
   if (!exists) {
-    throw new Error(`Pasta raiz com ID ${ROOT_FOLDER_ID} não encontrada ou inacessível. Verifique se a conta de serviço tem permissão para acessar esta pasta.`);
+    throw new Error(`Pasta raiz com ID ${GOOGLE_DRIVE_ROOT_FOLDER_ID} não encontrada ou inacessível. Verifique se a conta de serviço tem permissão para acessar esta pasta.`);
   }
-  return ROOT_FOLDER_ID;
+  return GOOGLE_DRIVE_ROOT_FOLDER_ID;
 }
 
 // Função para obter ou criar pasta da requisição

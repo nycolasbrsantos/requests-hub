@@ -1,7 +1,8 @@
 "use client";
 import { PageContainer } from '@/components/ui/page-container';
 import { ServiceCard } from '../requests/_components/ServiceCard';
-import { useSession } from 'next-auth/react';
+import { useSession, signOut } from 'next-auth/react';
+import { Button } from '@/components/ui/button';
 
 export default function ProtectedHomePage() {
   const { data: session } = useSession();
@@ -39,6 +40,13 @@ export default function ProtectedHomePage() {
           {isAdmin && (
             <a href="/admin/users" className="inline-block px-6 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition">Painel Admin</a>
           )}
+          <Button
+            variant="outline"
+            className="mt-4"
+            onClick={() => signOut({ callbackUrl: '/login' })}
+          >
+            Sair
+          </Button>
         </div>
       </div>
     </PageContainer>
