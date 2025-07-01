@@ -10,7 +10,6 @@ import * as z from 'zod'
 import { NumericFormat } from 'react-number-format'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { useState } from 'react'
 import { DriveUploadForm } from '../../_components/DriveUploadForm'
 
 import { createRequest } from '@/actions/create-request'
@@ -75,29 +74,9 @@ export function CreateRequestForm({ requesterName }: CreateRequestFormProps) {
     },
   })
 
-  // Adicionar estado para arquivos
-  const [files, setFiles] = useState<FileList | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
-
   async function onSubmit(values: FormValues) {
-    // 1. Cria a requisição normalmente
-    const result = await execute({ ...values, title: values.productName, type: defaultType, requesterName });
-    if (!result?.data?.id) return;
-    // 2. Se houver arquivos, faz upload para o Drive
-    if (files && files.length > 0) {
-      setIsUploading(true);
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('uploadedBy', requesterName);
-        await fetch(`/api/requests/${result.data.id}/upload`, {
-          method: 'POST',
-          body: formData,
-        });
-      }
-      setIsUploading(false);
-    }
+    // Cria a requisição normalmente
+    await execute({ ...values, title: values.productName, type: defaultType, requesterName });
   }
 
   return (
@@ -203,11 +182,11 @@ export function CreateRequestForm({ requesterName }: CreateRequestFormProps) {
             />
             <div className="pt-2 pb-4 border-t mt-4">
               <div className="font-medium mb-2">Anexos (opcional)</div>
-              <input type="file" multiple onChange={e => setFiles(e.target.files)} disabled={isUploading} className="block w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 transition" />
-              {isUploading && <div className="text-xs text-muted-foreground mt-2">Enviando anexos...</div>}
+              {/* Upload de anexos apenas via Google Drive */}
+              <DriveUploadForm requestId={0} uploadedBy={requesterName} />
             </div>
-            <Button type="submit" disabled={status === 'executing' || isUploading} className="w-full h-12 text-base font-semibold">
-              {status === 'executing' || isUploading ? 'Enviando...' : 'Enviar Requisição'}
+            <Button type="submit" disabled={status === 'executing'} className="w-full h-12 text-base font-semibold">
+              {status === 'executing' ? 'Enviando...' : 'Enviar Requisição'}
             </Button>
           </form>
         </Form>

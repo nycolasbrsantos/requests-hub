@@ -1,16 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { StatusBadge } from './StatusBadge';
-import { Paperclip, Trash2, CheckCircle2, XCircle, Upload, Loader2, FileText, Image, File } from 'lucide-react';
+import { Paperclip, Trash2, CheckCircle2, XCircle } from 'lucide-react';
 import dayjs from 'dayjs';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { updateRequestAttachments } from '@/actions/update-request-status/update-attachments';
-import { updateRequestStatus } from '@/actions/update-request-status';
 import { useSession } from 'next-auth/react';
-import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useAction } from 'next-safe-action/hooks';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DriveUploadForm } from './DriveUploadForm';
 import { DriveAttachmentsList } from './DriveAttachmentsList';
@@ -51,8 +48,6 @@ interface RequestDetailsDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-const MAX_FILES = 5;
-
 const statusOptions = [
   { value: 'pending', label: 'Pendente' },
   { value: 'approved', label: 'Aprovada' },
@@ -60,16 +55,6 @@ const statusOptions = [
   { value: 'in_progress', label: 'Em andamento' },
   { value: 'completed', label: 'Concluída' },
 ];
-
-const getFileIcon = (filename?: string) => {
-  if (!filename || typeof filename !== 'string') {
-    return <File className="w-4 h-4 text-blue-500" />;
-  }
-  const ext = filename.split('.').pop()?.toLowerCase();
-  if (ext === 'pdf') return <FileText className="w-4 h-4 text-red-500" />;
-  if (['png', 'jpg', 'jpeg', 'gif', 'webp'].includes(ext || '')) return <Image className="w-4 h-4 text-green-500" />;
-  return <File className="w-4 h-4 text-blue-500" />;
-};
 
 export default function RequestDetailsDialog({ requestId, open, onOpenChange }: RequestDetailsDialogProps) {
   const { data: session } = useSession();
@@ -79,39 +64,8 @@ export default function RequestDetailsDialog({ requestId, open, onOpenChange }: 
   const [removingAtt, setRemovingAtt] = useState<Attachment | null>(null);
   const [comment, setComment] = useState('');
   const [isRemoving, setIsRemoving] = useState(false);
-  const [showAddAttachment, setShowAddAttachment] = useState(false);
-  const [newFiles, setNewFiles] = useState<File[]>([]);
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadComment, setUploadComment] = useState('');
-  const [pendingStatus, setPendingStatus] = useState<string | null>(null);
-  const [statusComment, setStatusComment] = useState('');
-  const [isStatusUpdating, setIsStatusUpdating] = useState(false);
   const userName = session?.user?.name ?? 'Desconhecido';
   const { attachments: driveAttachments, loading: loadingDriveAttachments, error: errorDriveAttachments } = useDriveAttachments(requestId);
-
-  const { execute: executeUpdateStatus, status: updateStatusState } = useAction(updateRequestStatus, {
-    onSuccess: (data) => {
-      if (data.data && typeof data.data === 'object' && 'success' in data.data && data.data.success) {
-        toast.success(data.data.success, { icon: <CheckCircle2 className="text-green-500" /> });
-        // Refetch dados após atualização de status
-        setLoading(true);
-        fetch(`/api/requests/${requestId}`)
-          .then(res => res.json())
-          .then(data => setRequest(data))
-          .finally(() => setLoading(false));
-      }
-      if (data.data && typeof data.data === 'object' && 'error' in data.data && data.data.error) {
-        toast.error(data.data.error, { icon: <XCircle className="text-red-500" /> });
-      }
-      setPendingStatus(null);
-      setStatusComment('');
-      setIsStatusUpdating(false);
-    },
-    onError: () => {
-      toast.error('Erro ao atualizar status.', { icon: <XCircle className="text-red-500" /> });
-      setIsStatusUpdating(false);
-    }
-  });
 
   useEffect(() => {
     if (open) {
@@ -122,63 +76,6 @@ export default function RequestDetailsDialog({ requestId, open, onOpenChange }: 
         .finally(() => setLoading(false));
     }
   }, [open, requestId]);
-
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    setNewFiles(files);
-  };
-
-  const handleUpload = async () => {
-    if (!request || newFiles.length === 0 || !uploadComment.trim()) return;
-
-    setIsUploading(true);
-    try {
-      const uploaded: Attachment[] = [];
-      
-      for (const file of newFiles) {
-        const formData = new FormData();
-        formData.append('file', file);
-        
-        const res = await fetch('/api/upload', {
-          method: 'POST',
-          body: formData,
-        });
-        
-        if (!res.ok) throw new Error('Erro no upload');
-        
-        const data = await res.json();
-        uploaded.push({ filename: data.filename, uploadedBy: session?.user?.name ?? 'Desconhecido' });
-      }
-
-      const newAttachments = [...request.attachments, ...uploaded].slice(0, MAX_FILES);
-      
-      await updateRequestAttachments({
-        id: requestId,
-        attachments: newAttachments,
-        changedBy: session?.user?.name ?? 'Desconhecido',
-        comment: uploadComment,
-        action: 'add',
-      }).then((data) => {
-        if (data && data.success) toast.success(data.success, { icon: <CheckCircle2 className="text-green-500" /> });
-        if (data && data.error) toast.error(data.error, { icon: <XCircle className="text-red-500" /> });
-      });
-
-      // Refetch dados após upload
-      setLoading(true);
-      fetch(`/api/requests/${requestId}`)
-        .then(res => res.json())
-        .then(data => setRequest(data))
-        .finally(() => setLoading(false));
-
-      setShowAddAttachment(false);
-      setNewFiles([]);
-      setUploadComment('');
-    } catch {
-      toast.error('Erro ao fazer upload dos arquivos', { icon: <XCircle className="text-red-500" /> });
-    } finally {
-      setIsUploading(false);
-    }
-  };
 
   const canUpdateStatus = (newStatus: string) => {
     if (!role || !request) return false;
@@ -208,12 +105,7 @@ export default function RequestDetailsDialog({ requestId, open, onOpenChange }: 
                 <span className="text-xs text-muted-foreground">Status:</span>
                 <Select 
                   value={request.status} 
-                  onValueChange={(newStatus) => {
-                    if (canUpdateStatus(newStatus)) {
-                      setPendingStatus(newStatus);
-                    }
-                  }}
-                  disabled={updateStatusState === 'executing'}
+                  onValueChange={() => {}}
                 >
                   <SelectTrigger className="w-32 h-8 text-xs">
                     <SelectValue />
@@ -230,9 +122,6 @@ export default function RequestDetailsDialog({ requestId, open, onOpenChange }: 
                     ))}
                   </SelectContent>
                 </Select>
-                {updateStatusState === 'executing' && (
-                  <Loader2 className="w-4 h-4 animate-spin text-primary" />
-                )}
               </div>
             )}
           </div>
@@ -336,15 +225,6 @@ export default function RequestDetailsDialog({ requestId, open, onOpenChange }: 
           <button className="px-4 py-2 bg-muted text-foreground rounded hover:bg-muted/80 transition" onClick={() => onOpenChange(false)}>
             Fechar
           </button>
-          {Array.isArray(request?.attachments) && request.attachments.length < MAX_FILES && (
-            <Button
-              onClick={() => setShowAddAttachment(true)}
-              className="px-4 py-2 bg-primary text-white rounded hover:bg-primary/90 transition ml-2"
-            >
-              <Upload className="w-4 h-4 mr-2" />
-              Adicionar Anexo
-            </Button>
-          )}
         </DialogFooter>
         
         {/* Dialog para comentário obrigatório ao remover anexo */}
@@ -388,103 +268,6 @@ export default function RequestDetailsDialog({ requestId, open, onOpenChange }: 
                   .then(data => setRequest(data))
                   .finally(() => setLoading(false));
               }}>Confirmar Remoção</button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
-        {/* Dialog para adicionar anexos */}
-        <Dialog open={showAddAttachment} onOpenChange={open => { if (!open) { setShowAddAttachment(false); setNewFiles([]); setUploadComment(''); } }}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Adicionar Anexo à Requisição {request?.customId || requestId}</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">Selecionar arquivos:</label>
-                <input 
-                  type="file" 
-                  multiple 
-                  accept=".pdf,image/png,image/jpeg" 
-                  onChange={handleFileSelect}
-                  className="w-full p-2 border rounded"
-                />
-                {newFiles.length > 0 && (
-                  <ul className="mt-2 space-y-1">
-                    {newFiles.map((f, idx) => (
-                      <li key={f.name + idx} className="flex items-center gap-2 text-sm text-muted-foreground">
-                        {getFileIcon(f.name)}
-                        <span className="truncate">{f.name}</span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-2">Comentário (obrigatório):</label>
-                <Textarea
-                  placeholder="Descreva o motivo da adição"
-                  value={uploadComment}
-                  onChange={e => setUploadComment(e.target.value)}
-                  rows={3}
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <button className="px-4 py-2 bg-muted text-foreground rounded hover:bg-muted/80 transition" onClick={() => { setShowAddAttachment(false); setNewFiles([]); setUploadComment(''); }}>
-                Cancelar
-              </button>
-              <button 
-                className="px-4 py-2 bg-primary text-white rounded hover:bg-primary/90 transition" 
-                disabled={newFiles.length === 0 || !uploadComment.trim() || isUploading || (Array.isArray(request?.attachments) && request.attachments.length + newFiles.length > MAX_FILES)}
-                onClick={handleUpload}
-              >
-                {isUploading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Enviando...
-                  </>
-                ) : (
-                  'Salvar'
-                )}
-              </button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
-        {/* Dialog para comentário obrigatório ao atualizar status */}
-        <Dialog open={!!pendingStatus} onOpenChange={open => { if (!open) { setPendingStatus(null); setStatusComment(''); } }}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Comentário obrigatório</DialogTitle>
-            </DialogHeader>
-            <div className="mb-2 text-sm">Descreva o motivo da alteração de status:</div>
-            <Textarea
-              placeholder="Comentário obrigatório"
-              value={statusComment}
-              onChange={e => setStatusComment(e.target.value)}
-              rows={3}
-              className="mb-2"
-            />
-            <DialogFooter>
-              <button className="px-4 py-2 bg-muted text-foreground rounded hover:bg-muted/80 transition" onClick={() => { setPendingStatus(null); setStatusComment(''); }}>
-                Cancelar
-              </button>
-              <button 
-                className="px-4 py-2 bg-primary text-white rounded hover:bg-primary/90 transition" 
-                disabled={!statusComment.trim() || isStatusUpdating}
-                onClick={() => {
-                  setIsStatusUpdating(true);
-                  executeUpdateStatus({
-                    id: requestId,
-                    status: pendingStatus as 'pending' | 'approved' | 'rejected' | 'in_progress' | 'completed',
-                    changedBy: session?.user?.name ?? undefined,
-                    comment: statusComment,
-                  });
-                }}
-              >
-                {isStatusUpdating ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-                Confirmar
-              </button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
