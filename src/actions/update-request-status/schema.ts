@@ -10,4 +10,6 @@ export const updateRequestStatusSchema = z.object({
     'in_progress',
     'completed',
   ]),
+  changedBy: z.string().optional(),
+  comment: z.string().min(1, 'Comentário obrigatório'),
 })

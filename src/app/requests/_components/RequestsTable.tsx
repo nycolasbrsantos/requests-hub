@@ -5,7 +5,7 @@ import dayjs from 'dayjs';
 import { StatusBadge } from './StatusBadge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
-import { MoreVertical, Info, CheckCircle2, XCircle, ArrowUpDown, ArrowUp, ArrowDown, Loader2, FileQuestion, Clock } from 'lucide-react';
+import { MoreVertical, Info, CheckCircle2, XCircle, ArrowUpDown, ArrowUp, ArrowDown, Loader2, FileQuestion, Clock, Paperclip, Trash2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -18,6 +18,8 @@ import { Button } from '@/components/ui/button';
 import { AnimatePresence, motion } from 'framer-motion';
 import { updateRequestStatus } from '@/actions/update-request-status';
 import { useAction } from 'next-safe-action/hooks';
+import { useRouter } from 'next/navigation';
+import RequestDetailsDialog from './RequestDetailsDialog';
 
 interface RequestsTableProps {
   requests: Request[];
@@ -62,11 +64,17 @@ export default function RequestsTable({ requests, isLoading = false }: RequestsT
   const [dateEnd, setDateEnd] = useState<string>('');
   const [isFiltering, setIsFiltering] = useState(false);
   const [openHistoryId, setOpenHistoryId] = useState<number | null>(null);
+  const [attachmentAction, setAttachmentAction] = useState<{ reqId: number; type: 'add' | 'remove'; file?: File; att?: { filename: string; uploadedBy: string } } | null>(null);
+  const [attachmentComment, setAttachmentComment] = useState('');
+  const [isAttachmentLoading, setIsAttachmentLoading] = useState(false);
+  const router = useRouter();
 
   const { execute: executeUpdateStatus, status: updateStatusState } = useAction(updateRequestStatus, {
     onSuccess: (data) => {
-      if (data.data && 'success' in data.data && data.data.success) toast.success(data.data.success, { icon: <CheckCircle2 className="text-green-500" /> });
-      if (data.data && 'error' in data.data && data.data.error) toast.error(data.data.error, { icon: <XCircle className="text-red-500" /> });
+      if (data.data && typeof data.data === 'object' && 'success' in data.data && data.data.success)
+        toast.success(data.data.success, { icon: <CheckCircle2 className="text-green-500" /> });
+      if (data.data && typeof data.data === 'object' && 'error' in data.data && data.data.error)
+        toast.error(data.data.error, { icon: <XCircle className="text-red-500" /> });
     },
     onError: () => {
       toast.error('Erro ao atualizar status.', { icon: <XCircle className="text-red-500" /> });
@@ -326,7 +334,7 @@ export default function RequestsTable({ requests, isLoading = false }: RequestsT
                         {(role === 'admin' || role === 'supervisor') && (
                           <DropdownMenuItem
                             disabled={updateStatusState === 'executing'}
-                            onClick={() => executeUpdateStatus({ id: req.id, status: 'in_progress' })}
+                            onClick={() => executeUpdateStatus({ id: req.id, status: 'in_progress', changedBy: session?.user?.name ?? undefined })}
                           >
                             {updateStatusState === 'executing' ? (
                               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -339,7 +347,7 @@ export default function RequestsTable({ requests, isLoading = false }: RequestsT
                         {(role === 'admin' || role === 'supervisor') && (
                           <DropdownMenuItem
                             disabled={updateStatusState === 'executing'}
-                            onClick={() => executeUpdateStatus({ id: req.id, status: 'approved' })}
+                            onClick={() => executeUpdateStatus({ id: req.id, status: 'approved', changedBy: session?.user?.name ?? undefined })}
                           >
                             {updateStatusState === 'executing' ? (
                               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -352,7 +360,7 @@ export default function RequestsTable({ requests, isLoading = false }: RequestsT
                         {(role === 'admin' || role === 'supervisor') && (
                           <DropdownMenuItem
                             disabled={updateStatusState === 'executing'}
-                            onClick={() => executeUpdateStatus({ id: req.id, status: 'rejected' })}
+                            onClick={() => executeUpdateStatus({ id: req.id, status: 'rejected', changedBy: session?.user?.name ?? undefined })}
                           >
                             {updateStatusState === 'executing' ? (
                               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -365,7 +373,7 @@ export default function RequestsTable({ requests, isLoading = false }: RequestsT
                         {(role === 'admin' || role === 'encarregado') && (
                           <DropdownMenuItem
                             disabled={updateStatusState === 'executing'}
-                            onClick={() => executeUpdateStatus({ id: req.id, status: 'completed' })}
+                            onClick={() => executeUpdateStatus({ id: req.id, status: 'completed', changedBy: session?.user?.name ?? undefined })}
                           >
                             {updateStatusState === 'executing' ? (
                               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -412,88 +420,8 @@ export default function RequestsTable({ requests, isLoading = false }: RequestsT
                         </DialogFooter>
                       </DialogContent>
                     </Dialog>
-                    <Dialog open={openDetailsId === req.id} onOpenChange={() => setOpenDetailsId(null)}>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>Detalhes da Requisição {req.customId || req.id}</DialogTitle>
-                        </DialogHeader>
-                        <div className="space-y-2 text-sm">
-                          <div><b>Título:</b> {req.title}</div>
-                          <div><b>Tipo:</b> {req.type}</div>
-                          <div><b>Status:</b> <StatusBadge status={req.status as 'pending' | 'approved' | 'rejected' | 'in_progress' | 'completed'} /></div>
-                          <div><b>Solicitante:</b> {req.requesterName}</div>
-                          <div><b>Data:</b> {dayjs(req.createdAt).format('DD/MM/YYYY HH:mm')}</div>
-                          {req.description && <div><b>Descrição:</b> {req.description}</div>}
-                          {req.supplier && <div><b>Fornecedor:</b> {req.supplier}</div>}
-                          {req.productName && <div><b>Produto:</b> {req.productName}</div>}
-                          {req.quantity && <div><b>Quantidade:</b> {req.quantity}</div>}
-                          {req.unitPrice && <div><b>Preço Unitário:</b> R$ {req.unitPrice}</div>}
-                          {Array.isArray(req.attachments) && req.attachments.length > 0 && (
-                            <div><b>Anexos:</b> {req.attachments.map((att: string | { filename: string; uploadedBy: string }) => {
-                              if (typeof att === 'string') {
-                                return (
-                                  <span key={att} className="mr-2">
-                                    <a href={`/uploads/${att}`} target="_blank" rel="noopener noreferrer" className="text-primary underline">{att}</a>
-                                    <span className="text-xs ml-1">(Desconhecido)</span>
-                                  </span>
-                                );
-                              }
-                              return (
-                                <span key={att.filename} className="mr-2">
-                                  <a href={`/uploads/${att.filename}`} target="_blank" rel="noopener noreferrer" className="text-primary underline">{att.filename}</a>
-                                  <span className="text-xs ml-1">({att.uploadedBy})</span>
-                                  {session?.user?.name === att.uploadedBy && (
-                                    <>
-                                      <button className="text-red-500 ml-1 text-xs hover:underline" onClick={() => setConfirmRemove({ reqId: req.id, att })}>
-                                        Remover
-                                      </button>
-                                      <Dialog open={!!confirmRemove && confirmRemove.reqId === req.id && confirmRemove.att.filename === att.filename} onOpenChange={open => { if (!open) setConfirmRemove(null); }}>
-                                        <DialogContent>
-                                          <DialogHeader>
-                                            <DialogTitle>Remover anexo</DialogTitle>
-                                          </DialogHeader>
-                                          <div className="py-2 text-sm">Tem certeza que deseja remover o anexo <b>{att.filename}</b>?</div>
-                                          <DialogFooter>
-                                            <button className="px-4 py-2 bg-muted text-foreground rounded hover:bg-muted/80 transition" onClick={() => setConfirmRemove(null)}>
-                                              Cancelar
-                                            </button>
-                                            <button className="px-4 py-2 bg-destructive text-white rounded hover:bg-destructive/90 transition ml-2" onClick={() => {
-                                              const attachmentsArr = Array.isArray(req.attachments) ? req.attachments as { filename: string, uploadedBy: string }[] : [];
-                                              const filtered = attachmentsArr.filter(a => a.filename !== att.filename || a.uploadedBy !== att.uploadedBy);
-                                              startUpdateAttachments(() => {
-                                                updateRequestAttachments({ id: req.id, attachments: filtered })
-                                                  .then((data) => {
-                                                    if (data && typeof data === 'object' && 'success' in data && data.success) toast.success(data.success, { icon: <CheckCircle2 className="text-green-500" /> });
-                                                    if (data && typeof data === 'object' && 'error' in data && data.error) toast.error(data.error, { icon: <XCircle className="text-red-500" /> });
-                                                  });
-                                              });
-                                              setConfirmRemove(null);
-                                            }}>
-                                              Remover
-                                            </button>
-                                          </DialogFooter>
-                                        </DialogContent>
-                                      </Dialog>
-                                    </>
-                                  )}
-                                </span>
-                              );
-                            })}</div>
-                          )}
-                        </div>
-                        <DialogFooter>
-                          <button className="px-4 py-2 bg-muted text-foreground rounded hover:bg-muted/80 transition" onClick={() => setOpenDetailsId(null)}>
-                            Fechar
-                          </button>
-                          {Array.isArray(req.attachments) && req.attachments.length < MAX_FILES && (
-                            <button className="px-4 py-2 bg-primary text-white rounded hover:bg-primary/90 transition ml-2" onClick={() => setOpenAddAttachmentId(req.id)}>
-                              Adicionar Anexo
-                            </button>
-                          )}
-                        </DialogFooter>
-                      </DialogContent>
-                    </Dialog>
-                    <Dialog open={openAddAttachmentId === req.id} onOpenChange={() => { setOpenAddAttachmentId(null); setNewFiles([]); }}>
+                    <RequestDetailsDialog requestId={req.id} open={openDetailsId === req.id} onOpenChange={() => setOpenDetailsId(null)} />
+                    <Dialog open={openAddAttachmentId === req.id} onOpenChange={() => { setOpenAddAttachmentId(null); setNewFiles([]); router.refresh(); setOpenDetailsId(null); }}>
                       <DialogContent>
                         <DialogHeader>
                           <DialogTitle>Adicionar Anexo à Requisição {req.customId || req.id}</DialogTitle>
@@ -510,35 +438,77 @@ export default function RequestsTable({ requests, isLoading = false }: RequestsT
                         )}
                         <DialogFooter>
                           <button className="px-4 py-2 bg-muted text-foreground rounded hover:bg-muted/80 transition" onClick={() => { setOpenAddAttachmentId(null); setNewFiles([]); }}>Cancelar</button>
-                          <button className="px-4 py-2 bg-primary text-white rounded hover:bg-primary/90 transition" disabled={newFiles.length === 0 || (Array.isArray(req.attachments) && req.attachments.length + newFiles.length > MAX_FILES) || isUpdatingAttachments} onClick={async () => {
-                            if (!session?.user?.name) return;
-                            const uploaded: { filename: string, uploadedBy: string }[] = [];
-                            for (const file of newFiles) {
-                              if (file.size > 10 * 1024 * 1024) {
-                                toast.error(`O arquivo ${file.name} excede 10MB.`, { icon: <XCircle className="text-red-500" /> });
-                                return;
+                          <button className="px-4 py-2 bg-primary text-white rounded hover:bg-primary/90 transition" disabled={newFiles.length === 0 || (Array.isArray(req.attachments) && req.attachments.length + newFiles.length > MAX_FILES) || isAttachmentLoading} onClick={() => setAttachmentAction({ reqId: req.id, type: 'add' })}>Salvar</button>
+                        </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
+                    <Dialog open={!!attachmentAction} onOpenChange={open => { if (!open) { setAttachmentAction(null); setAttachmentComment(''); } }}>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>{attachmentAction?.type === 'add' ? 'Adicionar Anexo' : 'Remover Anexo'}</DialogTitle>
+                        </DialogHeader>
+                        <Textarea
+                          placeholder="Descreva o motivo (obrigatório)"
+                          value={attachmentComment}
+                          onChange={e => setAttachmentComment(e.target.value)}
+                          rows={3}
+                          className="mb-2"
+                        />
+                        <DialogFooter>
+                          <button className="px-4 py-2 bg-muted text-foreground rounded hover:bg-muted/80 transition" onClick={() => { setAttachmentAction(null); setAttachmentComment(''); }}>Cancelar</button>
+                          <button className="px-4 py-2 bg-primary text-white rounded hover:bg-primary/90 transition" disabled={!attachmentComment.trim() || isAttachmentLoading} onClick={async () => {
+                            setIsAttachmentLoading(true);
+                            if (attachmentAction?.type === 'add') {
+                              // Upload dos arquivos
+                              const uploaded: { filename: string, uploadedBy: string }[] = [];
+                              for (const file of newFiles) {
+                                if (file.size > 10 * 1024 * 1024) {
+                                  toast.error(`O arquivo ${file.name} excede 10MB.`, { icon: <XCircle className="text-red-500" /> });
+                                  setIsAttachmentLoading(false);
+                                  return;
+                                }
+                                const formData = new FormData();
+                                formData.append('file', file);
+                                const res = await fetch('/api/upload', { method: 'POST', body: formData });
+                                if (!res.ok) {
+                                  toast.error(`Falha ao enviar o arquivo ${file.name}.`, { icon: <XCircle className="text-red-500" /> });
+                                  setIsAttachmentLoading(false);
+                                  return;
+                                }
+                                const data = await res.json();
+                                uploaded.push({ filename: data.filename, uploadedBy: session?.user?.name ?? 'Desconhecido' });
                               }
-                              const formData = new FormData();
-                              formData.append('file', file);
-                              const res = await fetch('/api/upload', { method: 'POST', body: formData });
-                              if (!res.ok) {
-                                toast.error(`Falha ao enviar o arquivo ${file.name}.`, { icon: <XCircle className="text-red-500" /> });
-                                return;
-                              }
-                              const data = await res.json();
-                              uploaded.push({ filename: data.filename, uploadedBy: session.user.name });
+                              const newAttachments = [...(req.attachments || []), ...uploaded].slice(0, MAX_FILES);
+                              await updateRequestAttachments({
+                                id: req.id,
+                                attachments: newAttachments,
+                                changedBy: session?.user?.name ?? 'Desconhecido',
+                                comment: attachmentComment,
+                                action: 'add',
+                              }).then((data) => {
+                                if (data && data.success) toast.success(data.success, { icon: <CheckCircle2 className="text-green-500" /> });
+                                if (data && data.error) toast.error(data.error, { icon: <XCircle className="text-red-500" /> });
+                              });
+                              setNewFiles([]);
+                            } else if (attachmentAction?.type === 'remove' && attachmentAction.att) {
+                              const attachmentsArr = Array.isArray(req.attachments) ? req.attachments as { filename: string, uploadedBy: string }[] : [];
+                              const filtered = attachmentsArr.filter(a => a.filename !== attachmentAction.att!.filename || a.uploadedBy !== attachmentAction.att!.uploadedBy);
+                              await updateRequestAttachments({
+                                id: req.id,
+                                attachments: filtered,
+                                changedBy: session?.user?.name ?? 'Desconhecido',
+                                comment: attachmentComment,
+                                action: 'remove',
+                              }).then((data) => {
+                                if (data && data.success) toast.success(data.success, { icon: <CheckCircle2 className="text-green-500" /> });
+                                if (data && data.error) toast.error(data.error, { icon: <XCircle className="text-red-500" /> });
+                              });
                             }
-                            const newAttachments = [...(req.attachments || []), ...uploaded].slice(0, MAX_FILES);
-                            startUpdateAttachments(() => {
-                              updateRequestAttachments({ id: req.id, attachments: newAttachments })
-                                .then((data) => {
-                                  if (data && typeof data === 'object' && 'success' in data && data.success) toast.success(data.success, { icon: <CheckCircle2 className="text-green-500" /> });
-                                  if (data && typeof data === 'object' && 'error' in data && data.error) toast.error(data.error, { icon: <XCircle className="text-red-500" /> });
-                                });
-                            });
+                            setIsAttachmentLoading(false);
+                            setAttachmentAction(null);
+                            setAttachmentComment('');
                             setOpenAddAttachmentId(null);
-                            setNewFiles([]);
-                          }}>Salvar</button>
+                          }}>Confirmar</button>
                         </DialogFooter>
                       </DialogContent>
                     </Dialog>
@@ -554,11 +524,25 @@ export default function RequestsTable({ requests, isLoading = false }: RequestsT
                                 <li key={idx} className="mb-6 ml-4">
                                   <div className="absolute w-3 h-3 bg-primary rounded-full -left-1.5 border-2 border-white" />
                                   <div className="flex items-center gap-2">
-                                    <StatusBadge status={h.status as 'pending' | 'approved' | 'rejected' | 'in_progress' | 'completed'} />
+                                    {h.status === 'attachment_added' ? (
+                                      <Paperclip className="w-4 h-4 text-blue-500" />
+                                    ) : h.status === 'attachment_removed' ? (
+                                      <Trash2 className="w-4 h-4 text-red-500" />
+                                    ) : (
+                                      <StatusBadge status={h.status as 'pending' | 'approved' | 'rejected' | 'in_progress' | 'completed'} />
+                                    )}
+                                    <span className="text-xs text-muted-foreground">
+                                      {h.status === 'attachment_added' && 'Anexo adicionado'}
+                                      {h.status === 'attachment_removed' && 'Anexo removido'}
+                                      {h.status !== 'attachment_added' && h.status !== 'attachment_removed' && null}
+                                    </span>
                                     <span className="text-xs text-muted-foreground">{dayjs(h.changedAt).format('DD/MM/YYYY HH:mm')}</span>
                                   </div>
                                   <div className="text-xs text-muted-foreground mt-1">
                                     por <span className="font-medium text-foreground">{h.changedBy}</span>
+                                    {h.comment && (
+                                      <div className="mt-1 text-xs italic text-muted-foreground">Comentário: {h.comment}</div>
+                                    )}
                                   </div>
                                 </li>
                               ))}
