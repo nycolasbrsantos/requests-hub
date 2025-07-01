@@ -38,10 +38,26 @@ export function DriveUploadForm({ requestId, uploadedBy, onSuccess }: Props) {
           method: "POST",
           body: formData,
         });
-        if (!res.ok) throw new Error("Falha ao enviar arquivo");
+        let resJson: unknown = null;
+        try {
+          resJson = await res.json();
+        } catch {}
+        console.log('Upload response:', res.status, resJson);
+        if (!res.ok) {
+          const hasError = (obj: unknown): obj is { error: unknown; details?: unknown } =>
+            typeof obj === 'object' && obj !== null && 'error' in obj;
+          const errorMsg = hasError(resJson)
+            ? `Erro ao enviar ${file.name}: ${String(resJson.error)}${resJson.details ? ' (' + String(resJson.details) + ')' : ''}`
+            : `Erro ao enviar ${file.name}: status ${res.status}`;
+          setError(errorMsg);
+          setIsUploading(false);
+          return;
+        }
         setProgress(Math.round(((i + 1) / files.length) * 100));
-      } catch (e) {
-        setError(`Erro ao enviar ${file.name}`);
+      } catch (e: unknown) {
+        let msg = `Erro ao enviar ${file.name}`;
+        if (e instanceof Error) msg += `: ${e.message}`;
+        setError(msg);
         setIsUploading(false);
         return;
       }

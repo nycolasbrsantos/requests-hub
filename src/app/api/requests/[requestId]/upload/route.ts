@@ -7,26 +7,24 @@ const ROOT_FOLDER_ID = process.env.GOOGLE_DRIVE_ROOT_FOLDER_ID!;
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { requestId: string } }
+  context: { params: { requestId: string } }
 ) {
   try {
-    const requestId = Number(params.requestId);
-    if (isNaN(requestId)) {
+    const { params } = context;
+    const { requestId } = await params;
+    const reqIdNum = Number(requestId);
+    if (isNaN(reqIdNum)) {
       return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
     }
-
     const formData = await req.formData();
     const file = formData.get('file') as File | null;
     const uploadedBy = formData.get('uploadedBy') as string | null;
-
     if (!file || !uploadedBy) {
       return NextResponse.json({ error: 'Arquivo ou usuário não enviado.' }, { status: 400 });
     }
-
     // 1. Cria/recupera pasta da requisição no Drive
-    const folderName = `Requisicao-${requestId}`;
+    const folderName = `Requisicao-${reqIdNum}`;
     const folderId = await createFolder(folderName, ROOT_FOLDER_ID);
-
     // 2. Upload para o Drive
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
@@ -36,7 +34,6 @@ export async function POST(
       file.type,
       folderId
     );
-
     // 3. Salva metadados no banco
     await db.insert(files).values({
       filename: driveFile.id!,
@@ -44,10 +41,9 @@ export async function POST(
       mimeType: file.type,
       size: buffer.length,
       uploadedBy,
-      requestId,
+      requestId: reqIdNum,
       createdAt: new Date(),
     });
-
     return NextResponse.json({
       success: true,
       driveFileId: driveFile.id,

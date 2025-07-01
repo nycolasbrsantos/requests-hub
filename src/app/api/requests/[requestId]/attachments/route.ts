@@ -5,17 +5,19 @@ import { eq } from 'drizzle-orm';
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { requestId: string } }
+  context: { params: { requestId: string } }
 ) {
   try {
-    const requestId = Number(params.requestId);
-    if (isNaN(requestId)) {
+    const { params } = context;
+    const { requestId } = await params;
+    const reqIdNum = Number(requestId);
+    if (isNaN(reqIdNum)) {
       return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
     }
     // Busca anexos no banco
     let attachments = [];
     try {
-      attachments = await db.select().from(files).where(eq(files.requestId, requestId));
+      attachments = await db.select().from(files).where(eq(files.requestId, reqIdNum));
     } catch (err) {
       console.error('Erro ao buscar anexos no banco:', err);
       return NextResponse.json({ attachments: [] });
