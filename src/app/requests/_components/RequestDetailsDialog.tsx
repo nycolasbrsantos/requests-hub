@@ -12,6 +12,9 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAction } from 'next-safe-action/hooks';
 import { Skeleton } from '@/components/ui/skeleton';
+import { DriveUploadForm } from './DriveUploadForm';
+import { DriveAttachmentsList } from './DriveAttachmentsList';
+import { useDriveAttachments } from './useDriveAttachments';
 
 interface Attachment {
   filename: string;
@@ -83,6 +86,8 @@ export default function RequestDetailsDialog({ requestId, open, onOpenChange }: 
   const [pendingStatus, setPendingStatus] = useState<string | null>(null);
   const [statusComment, setStatusComment] = useState('');
   const [isStatusUpdating, setIsStatusUpdating] = useState(false);
+  const userName = session?.user?.name ?? 'Desconhecido';
+  const { attachments: driveAttachments, loading: loadingDriveAttachments, error: errorDriveAttachments } = useDriveAttachments(requestId);
 
   const { execute: executeUpdateStatus, status: updateStatusState } = useAction(updateRequestStatus, {
     onSuccess: (data) => {
@@ -273,44 +278,17 @@ export default function RequestDetailsDialog({ requestId, open, onOpenChange }: 
               </div>
             )}
             
-            {Array.isArray(request.attachments) && request.attachments.length > 0 && (
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Paperclip className="w-4 h-4 text-muted-foreground" />
-                  <b className="text-sm">Anexos ({request.attachments.length})</b>
-                </div>
-                <div className="space-y-2">
-                  {request.attachments.map((att) => (
-                    <div key={att.filename} className="flex items-center justify-between p-2 bg-muted/50 rounded text-sm">
-                      <div className="flex items-center gap-2 flex-1 min-w-0">
-                        {getFileIcon(att.filename)}
-                        <a 
-                          href={`/api/files/${encodeURIComponent(att.filename)}`} 
-                          target="_blank" 
-                          rel="noopener noreferrer" 
-                          className="text-primary underline truncate hover:text-primary/80"
-                          title={att.filename}
-                        >
-                          {att.filename}
-                        </a>
-                      </div>
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <span>({att.uploadedBy})</span>
-                        {session?.user?.name === att.uploadedBy && (
-                          <button 
-                            className="text-red-500 hover:text-red-700 transition-colors" 
-                            onClick={() => setRemovingAtt(att)}
-                            title="Remover anexo"
-                          >
-                            <Trash2 className="w-3 h-3" />
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+            {/* NOVO BLOCO DE ANEXOS GOOGLE DRIVE */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Paperclip className="w-4 h-4 text-muted-foreground" />
+                <b className="text-sm">Anexos</b>
               </div>
-            )}
+              <DriveUploadForm requestId={requestId} uploadedBy={userName} onSuccess={() => {}} />
+              {loadingDriveAttachments && <div className="text-xs text-muted-foreground">Carregando anexos...</div>}
+              {errorDriveAttachments && <div className="text-xs text-red-500">{errorDriveAttachments}</div>}
+              <DriveAttachmentsList requestId={requestId} attachments={driveAttachments} onDelete={() => {}} />
+            </div>
             
             <div className="space-y-2">
               <div className="flex items-center gap-2">

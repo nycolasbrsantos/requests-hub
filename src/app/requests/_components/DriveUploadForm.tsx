@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 
 interface Props {
   requestId: number;
@@ -52,13 +53,21 @@ export function DriveUploadForm({ requestId, uploadedBy, onSuccess }: Props) {
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      <Input type="file" multiple {...register("files")} disabled={isUploading} />
-      {isUploading && <Progress value={progress} className="h-2" />}
-      {error && <div className="text-red-500 text-sm">{error}</div>}
-      <Button type="submit" disabled={isUploading}>
-        {isUploading ? "Enviando..." : "Enviar Arquivos"}
-      </Button>
-    </form>
+    <Card className="max-w-md mx-auto shadow border-primary/20">
+      <CardHeader>
+        <CardTitle>Adicionar Anexos</CardTitle>
+        <CardDescription>Selecione um ou mais arquivos para anexar à requisição.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <Input type="file" multiple {...register("files")} disabled={isUploading} className="block w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 transition" />
+          {isUploading && <Progress value={progress} className="h-2" />}
+          {error && <div className="text-red-500 text-sm">{error}</div>}
+          <Button type="submit" disabled={isUploading} className="w-full h-10 font-semibold">
+            {isUploading ? "Enviando..." : "Enviar Arquivos"}
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
   );
 } 

@@ -6,19 +6,15 @@ import { StatusBadge } from './StatusBadge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { MoreVertical, Info, CheckCircle2, XCircle, ArrowUpDown, ArrowUp, ArrowDown, Loader2, FileQuestion, Clock, Paperclip, Trash2 } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { useSession } from 'next-auth/react';
-import { useTransition } from 'react';
-import { updateRequestAttachments } from '@/actions/update-request-status/update-attachments';
 import { toast } from 'sonner';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { AnimatePresence, motion } from 'framer-motion';
 import { updateRequestStatus } from '@/actions/update-request-status';
 import { useAction } from 'next-safe-action/hooks';
-import { useRouter } from 'next/navigation';
 import RequestDetailsDialog from './RequestDetailsDialog';
 
 interface RequestsTableProps {
@@ -47,27 +43,15 @@ export default function RequestsTable({ requests, isLoading = false }: RequestsT
   const role = session?.user.role;
   const [status, setStatus] = useState('all');
   const [type, setType] = useState('all');
-  const [openModalId, setOpenModalId] = useState<number | null>(null);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [comment, setComment] = useState('');
   const [openDetailsId, setOpenDetailsId] = useState<number | null>(null);
-  const [openAddAttachmentId, setOpenAddAttachmentId] = useState<number | null>(null);
-  const [newFiles, setNewFiles] = useState<File[]>([]);
-  const MAX_FILES = 5;
-  const [isUpdatingAttachments, startUpdateAttachments] = useTransition();
-  const [confirmRemove, setConfirmRemove] = useState<{ reqId: number; att: { filename: string; uploadedBy: string } } | null>(null);
-  const PAGE_SIZE = 10;
-  const [page, setPage] = useState(1);
-  const [search, setSearch] = useState('');
-  const [sort, setSort] = useState<{ key: keyof Request | 'customId'; direction: 'asc' | 'desc' }>({ key: 'createdAt', direction: 'desc' });
-  const [dateStart, setDateStart] = useState<string>('');
-  const [dateEnd, setDateEnd] = useState<string>('');
-  const [isFiltering, setIsFiltering] = useState(false);
   const [openHistoryId, setOpenHistoryId] = useState<number | null>(null);
-  const [attachmentAction, setAttachmentAction] = useState<{ reqId: number; type: 'add' | 'remove'; file?: File; att?: { filename: string; uploadedBy: string } } | null>(null);
-  const [attachmentComment, setAttachmentComment] = useState('');
-  const [isAttachmentLoading, setIsAttachmentLoading] = useState(false);
-  const router = useRouter();
+  const [search, setSearch] = useState('');
+  const [dateStart, setDateStart] = useState('');
+  const [dateEnd, setDateEnd] = useState('');
+  const [page, setPage] = useState(1);
+  const [sort, setSort] = useState<{ key: keyof Request | 'customId'; direction: 'asc' | 'desc' }>({ key: 'createdAt', direction: 'desc' });
+  const PAGE_SIZE = 10;
+  const [isFiltering, setIsFiltering] = useState(false);
 
   const { execute: executeUpdateStatus, status: updateStatusState } = useAction(updateRequestStatus, {
     onSuccess: (data) => {
@@ -149,7 +133,6 @@ export default function RequestsTable({ requests, isLoading = false }: RequestsT
     );
   };
 
-  const isAnyFilterActive = status !== 'all' || type !== 'all' || search.trim() !== '' || dateStart !== '' || dateEnd !== '';
   const handleClearFilters = () => {
     setStatus('all');
     setType('all');
@@ -222,15 +205,15 @@ export default function RequestsTable({ requests, isLoading = false }: RequestsT
       <div className="mb-2 text-sm text-muted-foreground">
         {totalFiltered === 1 ? '1 requisição encontrada' : `${totalFiltered} requisições encontradas`}
       </div>
-      <div className="flex flex-col gap-2 sm:flex-row sm:gap-4 mb-4 flex-wrap items-end">
+      <div className="flex flex-wrap gap-2 mb-4 items-end">
         <Input
-          placeholder="Buscar por título, solicitante ou ID..."
           value={search}
           onChange={e => setSearch(e.target.value)}
-          className={`w-full sm:w-72 ${search.trim() !== '' ? 'border-primary ring-1 ring-primary' : ''}`}
+          placeholder="Buscar por título, solicitante ou ID"
+          className="w-64"
         />
         <Select value={status} onValueChange={setStatus}>
-          <SelectTrigger className={`w-full sm:w-48 ${status !== 'all' ? 'border-primary ring-1 ring-primary' : ''}`}>
+          <SelectTrigger className="w-40">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent>
@@ -240,7 +223,7 @@ export default function RequestsTable({ requests, isLoading = false }: RequestsT
           </SelectContent>
         </Select>
         <Select value={type} onValueChange={setType}>
-          <SelectTrigger className={`w-full sm:w-48 ${type !== 'all' ? 'border-primary ring-1 ring-primary' : ''}`}>
+          <SelectTrigger className="w-40">
             <SelectValue placeholder="Tipo" />
           </SelectTrigger>
           <SelectContent>
@@ -253,27 +236,15 @@ export default function RequestsTable({ requests, isLoading = false }: RequestsT
           type="date"
           value={dateStart}
           onChange={e => setDateStart(e.target.value)}
-          className={`w-full sm:w-44 ${dateStart ? 'border-primary ring-1 ring-primary' : ''}`}
-          placeholder="Data inicial"
+          className="w-40"
         />
         <Input
           type="date"
           value={dateEnd}
           onChange={e => setDateEnd(e.target.value)}
-          className={`w-full sm:w-44 ${dateEnd ? 'border-primary ring-1 ring-primary' : ''}`}
-          placeholder="Data final"
+          className="w-40"
         />
-        {isAnyFilterActive && (
-          <Button
-            type="button"
-            variant="outline"
-            className="h-10 px-3 flex items-center gap-2 border-destructive text-destructive hover:bg-destructive/10"
-            onClick={handleClearFilters}
-            title="Limpar filtros"
-          >
-            <XCircle className="w-4 h-4" /> Limpar filtros
-          </Button>
-        )}
+        <Button variant="outline" onClick={handleClearFilters} className="ml-2">Limpar Filtros</Button>
       </div>
       <div className="w-full overflow-x-auto rounded-md border bg-white dark:bg-zinc-900">
         <AnimatePresence mode="wait">
@@ -334,7 +305,7 @@ export default function RequestsTable({ requests, isLoading = false }: RequestsT
                         {(role === 'admin' || role === 'supervisor') && (
                           <DropdownMenuItem
                             disabled={updateStatusState === 'executing'}
-                            onClick={() => executeUpdateStatus({ id: req.id, status: 'in_progress', changedBy: session?.user?.name ?? undefined })}
+                            onClick={() => executeUpdateStatus({ id: req.id, status: 'in_progress', changedBy: session?.user?.name ?? undefined, comment: '' })}
                           >
                             {updateStatusState === 'executing' ? (
                               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -347,7 +318,7 @@ export default function RequestsTable({ requests, isLoading = false }: RequestsT
                         {(role === 'admin' || role === 'supervisor') && (
                           <DropdownMenuItem
                             disabled={updateStatusState === 'executing'}
-                            onClick={() => executeUpdateStatus({ id: req.id, status: 'approved', changedBy: session?.user?.name ?? undefined })}
+                            onClick={() => executeUpdateStatus({ id: req.id, status: 'approved', changedBy: session?.user?.name ?? undefined, comment: '' })}
                           >
                             {updateStatusState === 'executing' ? (
                               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -360,7 +331,7 @@ export default function RequestsTable({ requests, isLoading = false }: RequestsT
                         {(role === 'admin' || role === 'supervisor') && (
                           <DropdownMenuItem
                             disabled={updateStatusState === 'executing'}
-                            onClick={() => executeUpdateStatus({ id: req.id, status: 'rejected', changedBy: session?.user?.name ?? undefined })}
+                            onClick={() => executeUpdateStatus({ id: req.id, status: 'rejected', changedBy: session?.user?.name ?? undefined, comment: '' })}
                           >
                             {updateStatusState === 'executing' ? (
                               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -373,7 +344,7 @@ export default function RequestsTable({ requests, isLoading = false }: RequestsT
                         {(role === 'admin' || role === 'encarregado') && (
                           <DropdownMenuItem
                             disabled={updateStatusState === 'executing'}
-                            onClick={() => executeUpdateStatus({ id: req.id, status: 'completed', changedBy: session?.user?.name ?? undefined })}
+                            onClick={() => executeUpdateStatus({ id: req.id, status: 'completed', changedBy: session?.user?.name ?? undefined, comment: '' })}
                           >
                             {updateStatusState === 'executing' ? (
                               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -385,133 +356,7 @@ export default function RequestsTable({ requests, isLoading = false }: RequestsT
                         )}
                       </DropdownMenuContent>
                     </DropdownMenu>
-                    <Dialog open={openModalId === req.id} onOpenChange={() => { setOpenModalId(null); setSelectedFile(null); setComment(''); }}>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>Anexar Arquivo à Requisição #{req.id}</DialogTitle>
-                        </DialogHeader>
-                        <Input type="file" accept=".pdf,image/png,image/jpeg" onChange={e => setSelectedFile(e.target.files?.[0] || null)} />
-                        <Textarea
-                          placeholder="Adicione um comentário (opcional)"
-                          className="mt-2"
-                          value={comment}
-                          onChange={e => setComment(e.target.value)}
-                          rows={3}
-                        />
-                        <DialogFooter>
-                          <button
-                            className="px-4 py-2 bg-primary text-white rounded hover:bg-primary/90 transition"
-                            onClick={() => {
-                              alert(selectedFile ? `Arquivo '${selectedFile.name}' anexado com comentário: '${comment}' (simulado)` : 'Selecione um arquivo!');
-                              setOpenModalId(null);
-                              setSelectedFile(null);
-                              setComment('');
-                            }}
-                            disabled={!selectedFile}
-                          >
-                            Anexar
-                          </button>
-                          <button
-                            className="px-4 py-2 bg-muted text-foreground rounded hover:bg-muted/80 transition"
-                            onClick={() => { setOpenModalId(null); setSelectedFile(null); setComment(''); }}
-                          >
-                            Cancelar
-                          </button>
-                        </DialogFooter>
-                      </DialogContent>
-                    </Dialog>
                     <RequestDetailsDialog requestId={req.id} open={openDetailsId === req.id} onOpenChange={() => setOpenDetailsId(null)} />
-                    <Dialog open={openAddAttachmentId === req.id} onOpenChange={() => { setOpenAddAttachmentId(null); setNewFiles([]); router.refresh(); setOpenDetailsId(null); }}>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>Adicionar Anexo à Requisição {req.customId || req.id}</DialogTitle>
-                        </DialogHeader>
-                        <input type="file" multiple accept=".pdf,image/png,image/jpeg" onChange={e => setNewFiles(Array.from(e.target.files ?? []))} />
-                        {newFiles.length > 0 && (
-                          <ul className="mt-2 space-y-1">
-                            {newFiles.map((f, idx) => (
-                              <li key={f.name + idx} className="flex items-center gap-2 text-sm text-muted-foreground max-w-[220px] truncate">
-                                <span className="truncate">{f.name}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        )}
-                        <DialogFooter>
-                          <button className="px-4 py-2 bg-muted text-foreground rounded hover:bg-muted/80 transition" onClick={() => { setOpenAddAttachmentId(null); setNewFiles([]); }}>Cancelar</button>
-                          <button className="px-4 py-2 bg-primary text-white rounded hover:bg-primary/90 transition" disabled={newFiles.length === 0 || (Array.isArray(req.attachments) && req.attachments.length + newFiles.length > MAX_FILES) || isAttachmentLoading} onClick={() => setAttachmentAction({ reqId: req.id, type: 'add' })}>Salvar</button>
-                        </DialogFooter>
-                      </DialogContent>
-                    </Dialog>
-                    <Dialog open={!!attachmentAction} onOpenChange={open => { if (!open) { setAttachmentAction(null); setAttachmentComment(''); } }}>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>{attachmentAction?.type === 'add' ? 'Adicionar Anexo' : 'Remover Anexo'}</DialogTitle>
-                        </DialogHeader>
-                        <Textarea
-                          placeholder="Descreva o motivo (obrigatório)"
-                          value={attachmentComment}
-                          onChange={e => setAttachmentComment(e.target.value)}
-                          rows={3}
-                          className="mb-2"
-                        />
-                        <DialogFooter>
-                          <button className="px-4 py-2 bg-muted text-foreground rounded hover:bg-muted/80 transition" onClick={() => { setAttachmentAction(null); setAttachmentComment(''); }}>Cancelar</button>
-                          <button className="px-4 py-2 bg-primary text-white rounded hover:bg-primary/90 transition" disabled={!attachmentComment.trim() || isAttachmentLoading} onClick={async () => {
-                            setIsAttachmentLoading(true);
-                            if (attachmentAction?.type === 'add') {
-                              // Upload dos arquivos
-                              const uploaded: { filename: string, uploadedBy: string }[] = [];
-                              for (const file of newFiles) {
-                                if (file.size > 10 * 1024 * 1024) {
-                                  toast.error(`O arquivo ${file.name} excede 10MB.`, { icon: <XCircle className="text-red-500" /> });
-                                  setIsAttachmentLoading(false);
-                                  return;
-                                }
-                                const formData = new FormData();
-                                formData.append('file', file);
-                                const res = await fetch('/api/upload', { method: 'POST', body: formData });
-                                if (!res.ok) {
-                                  toast.error(`Falha ao enviar o arquivo ${file.name}.`, { icon: <XCircle className="text-red-500" /> });
-                                  setIsAttachmentLoading(false);
-                                  return;
-                                }
-                                const data = await res.json();
-                                uploaded.push({ filename: data.filename, uploadedBy: session?.user?.name ?? 'Desconhecido' });
-                              }
-                              const newAttachments = [...(req.attachments || []), ...uploaded].slice(0, MAX_FILES);
-                              await updateRequestAttachments({
-                                id: req.id,
-                                attachments: newAttachments,
-                                changedBy: session?.user?.name ?? 'Desconhecido',
-                                comment: attachmentComment,
-                                action: 'add',
-                              }).then((data) => {
-                                if (data && data.success) toast.success(data.success, { icon: <CheckCircle2 className="text-green-500" /> });
-                                if (data && data.error) toast.error(data.error, { icon: <XCircle className="text-red-500" /> });
-                              });
-                              setNewFiles([]);
-                            } else if (attachmentAction?.type === 'remove' && attachmentAction.att) {
-                              const attachmentsArr = Array.isArray(req.attachments) ? req.attachments as { filename: string, uploadedBy: string }[] : [];
-                              const filtered = attachmentsArr.filter(a => a.filename !== attachmentAction.att!.filename || a.uploadedBy !== attachmentAction.att!.uploadedBy);
-                              await updateRequestAttachments({
-                                id: req.id,
-                                attachments: filtered,
-                                changedBy: session?.user?.name ?? 'Desconhecido',
-                                comment: attachmentComment,
-                                action: 'remove',
-                              }).then((data) => {
-                                if (data && data.success) toast.success(data.success, { icon: <CheckCircle2 className="text-green-500" /> });
-                                if (data && data.error) toast.error(data.error, { icon: <XCircle className="text-red-500" /> });
-                              });
-                            }
-                            setIsAttachmentLoading(false);
-                            setAttachmentAction(null);
-                            setAttachmentComment('');
-                            setOpenAddAttachmentId(null);
-                          }}>Confirmar</button>
-                        </DialogFooter>
-                      </DialogContent>
-                    </Dialog>
                     <Dialog open={openHistoryId === req.id} onOpenChange={() => setOpenHistoryId(null)}>
                       <DialogContent className="max-w-md">
                         <DialogHeader>

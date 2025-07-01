@@ -95,9 +95,8 @@ export const files = pgTable('files', {
   originalName: varchar('original_name', { length: 512 }).notNull(),
   mimeType: varchar('mime_type', { length: 128 }).notNull(),
   size: integer('size').notNull(),
-  data: text('data').notNull(), // Dados binários do arquivo (base64)
   uploadedBy: varchar('uploaded_by', { length: 256 }).notNull(),
-  requestId: integer('request_id').notNull(), // FK para requests
+  requestId: integer('request_id').notNull().references(() => requests.id), // FK para requests
   createdAt: timestamp('created_at').defaultNow().notNull(),
 })
 

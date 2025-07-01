@@ -43,7 +43,6 @@ export async function POST(
       originalName: file.name,
       mimeType: file.type,
       size: buffer.length,
-      data: '', // Não armazene o binário, só referência
       uploadedBy,
       requestId,
       createdAt: new Date(),
@@ -56,7 +55,7 @@ export async function POST(
       webContentLink: driveFile.webContentLink,
     });
   } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: 'Erro ao fazer upload.' }, { status: 500 });
+    console.error('Erro detalhado no upload:', error);
+    return NextResponse.json({ error: 'Erro ao fazer upload.', details: String(error) }, { status: 500 });
   }
 } 
