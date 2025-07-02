@@ -2,9 +2,9 @@
 'use client'
 
 import { useSearchParams } from 'next/navigation'
-import { PurchaseRequestForm } from './PurchaseRequestForm'
-import { ItSupportRequestForm } from './ItSupportRequestForm'
-import { MaintenanceRequestForm } from './MaintenanceRequestForm'
+import { PurchaseRequestForm } from '@/app/requests/add/_components/PurchaseRequestForm'
+import { ItSupportRequestForm } from '@/app/requests/add/_components/ItSupportRequestForm'
+import { MaintenanceRequestForm } from '@/app/requests/add/_components/MaintenanceRequestForm'
 
 const REQUEST_TYPES = [
   { value: 'purchase', label: 'Compras' },
@@ -35,7 +35,7 @@ export function CreateRequestForm({ requesterName }: CreateRequestFormProps) {
     return <PurchaseRequestForm requesterName={requesterName} />;
   }
   if (requestType === 'it_support') {
-    return <ItSupportRequestForm requesterName={requesterName} />;
+    return <ItSupportRequestForm />;
   }
   if (requestType === 'maintenance') {
     return <MaintenanceRequestForm requesterName={requesterName} />;

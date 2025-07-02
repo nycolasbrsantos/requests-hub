@@ -85,7 +85,7 @@ const handler = async ({
       // Upload para a pasta da requisição
       if (newRequest.driveFolderId) {
         const pdfFile = await uploadFileToFolder(
-          Buffer.from(pdfBuffer),
+          pdfBuffer,
           pdfFileName,
           'application/pdf',
           newRequest.driveFolderId
