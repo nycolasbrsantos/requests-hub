@@ -3,7 +3,6 @@
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { and, gte, lte } from 'drizzle-orm'
-import { eq } from 'drizzle-orm'
 
 import { db } from '@/db'
 import { requests, purchaseRequests, maintenanceRequests, itSupportRequests } from '@/db/schema'
@@ -36,32 +35,72 @@ const handler = async ({
     const seq = String(requestsToday.length + 1).padStart(3, '0');
     const customId = `${dateStr}-${seq}`;
 
-    // Corrigir attachments para o formato correto
-    const attachments = Array.isArray(parsedInput.attachments)
-      ? parsedInput.attachments.map((att) =>
-          typeof att === 'string'
-            ? { id: att, name: att }
-            : { id: att.id, name: att.name, webViewLink: att.webViewLink }
-        )
-      : [];
-
-    // LOGS DE DEPURAÇÃO
-    console.log('parsedInput:', parsedInput);
-    console.log('customId:', customId);
-    console.log('insert object:', { ...parsedInput, customId, attachments });
-
     // Criação da subpasta no Google Drive
     const rootFolderId = getRootFolderIdByType(parsedInput.type as 'purchase' | 'it_support' | 'maintenance');
     const driveFolderId = await createFolder(`REQ-${customId}`, rootFolderId);
 
+    // Geração e upload do PDF detalhado da requisição
+    const pdfBuffer = await generateRequestPdf({
+      customId: customId,
+      createdAt: now.toISOString(),
+      requesterName: parsedInput.requesterName ?? '',
+      status: 'pending',
+      productName: parsedInput.productName ?? undefined,
+      quantity: parsedInput.quantity ?? undefined,
+      unitPrice: parsedInput.unitPrice ? String(parsedInput.unitPrice) : undefined,
+      supplier: parsedInput.supplier ?? undefined,
+      priority: parsedInput.priority ?? undefined,
+      description: parsedInput.description ?? undefined,
+    });
+    const pdfFileName = `Requisicao-${customId}.pdf`;
+    const pdfFile = await uploadFileToFolder(
+      pdfBuffer,
+      pdfFileName,
+      'application/pdf',
+      driveFolderId
+    );
+
+    // Upload dos anexos recebidos como File
+    const uploadedAttachments = [];
+    if (Array.isArray(parsedInput.attachments)) {
+      for (const att of parsedInput.attachments) {
+        if (typeof File !== 'undefined' && att instanceof File) {
+          const arrayBuffer = await att.arrayBuffer();
+          const buffer = Buffer.from(arrayBuffer);
+          const driveFile = await uploadFileToFolder(
+            buffer,
+            att.name,
+            att.type,
+            driveFolderId
+          );
+          uploadedAttachments.push({
+            id: driveFile.id ?? '',
+            name: driveFile.name ?? att.name,
+            webViewLink: driveFile.webViewLink ?? undefined,
+          });
+        } else if (typeof att === 'object' && 'id' in att && 'name' in att) {
+          uploadedAttachments.push(att);
+        }
+      }
+    }
+    // Sempre incluir o PDF como attachment
+    uploadedAttachments.push({
+      id: pdfFile.id ?? '',
+      name: pdfFile.name ?? pdfFileName,
+      webViewLink: pdfFile.webViewLink ?? undefined,
+    });
+
+    // Filtrar apenas objetos válidos para o banco
+    const validAttachments = uploadedAttachments.filter(att => att && typeof att === 'object' && 'id' in att && 'name' in att);
+
+    // Agora sim, inserir a requisição no banco
     const [newRequest] = await db
       .insert(requests)
       .values({
         ...parsedInput,
         customId,
-        attachments,
+        attachments: validAttachments,
         driveFolderId,
-        // Garante que unitPrice seja string (Drizzle espera string para decimal)
         unitPrice: parsedInput.unitPrice ? String(parsedInput.unitPrice) : undefined,
       })
       .returning();
@@ -86,47 +125,7 @@ const handler = async ({
       } else if (["it_support", "it_ticket"].includes(newRequest.type as string)) {
         await db.insert(itSupportRequests).values({
           requestId: newRequest.id,
-          // category é o único campo extra do schema para it_support/it_ticket
         });
-      }
-    }
-
-    // Geração e upload do PDF detalhado da requisição
-    if (newRequest) {
-      const pdfBuffer = await generateRequestPdf({
-        customId: newRequest.customId ?? '',
-        createdAt: newRequest.createdAt?.toISOString?.() ?? (typeof newRequest.createdAt === 'string' ? newRequest.createdAt : ''),
-        requesterName: newRequest.requesterName ?? '',
-        status: newRequest.status ?? '',
-        productName: newRequest.productName ?? undefined,
-        quantity: newRequest.quantity ?? undefined,
-        unitPrice: newRequest.unitPrice ? String(newRequest.unitPrice) : undefined,
-        supplier: newRequest.supplier ?? undefined,
-        priority: newRequest.priority ?? undefined,
-        description: newRequest.description ?? undefined,
-      });
-      // Nome do arquivo PDF
-      const pdfFileName = `Requisicao-${newRequest.customId}.pdf`;
-      // Upload para a pasta da requisição
-      if (newRequest.driveFolderId) {
-        const pdfFile = await uploadFileToFolder(
-          pdfBuffer,
-          pdfFileName,
-          'application/pdf',
-          newRequest.driveFolderId
-        );
-        // Atualiza os attachments para incluir o PDF
-        const updatedAttachments = [
-          ...((Array.isArray(newRequest.attachments) ? newRequest.attachments : []).map(att => ({
-            id: att.id ?? '',
-            name: att.name ?? '',
-            webViewLink: att.webViewLink ?? undefined,
-          }))),
-          { id: pdfFile.id ?? '', name: pdfFile.name ?? '', webViewLink: pdfFile.webViewLink ?? undefined },
-        ];
-        await db.update(requests)
-          .set({ attachments: updatedAttachments })
-          .where(eq(requests.id, newRequest.id));
       }
     }
 

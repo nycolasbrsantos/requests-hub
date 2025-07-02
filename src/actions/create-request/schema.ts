@@ -27,7 +27,9 @@ export const createRequestSchema = z.object({
         id: z.string(),
         name: z.string(),
         webViewLink: z.string().optional(),
-      })
+      }),
+      // Permitir File para upload direto
+      z.instanceof(File)
     ])
   ).max(5).optional(),
 })

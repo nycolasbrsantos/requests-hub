@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Loader2 } from 'lucide-react';
 import { createRequest } from '@/actions/create-request';
 import {
@@ -62,13 +62,11 @@ export function MaintenanceRequestForm({ requesterName }: MaintenanceRequestForm
         }
         toast.success('Requisição criada com sucesso!');
         form.reset();
-        setAttachmentsPreview([]);
       } else if (!result?.data?.id) {
         toast.error('Erro ao criar requisição: ID não retornado.');
       } else {
         toast.success('Requisição criada com sucesso!');
         form.reset();
-        setAttachmentsPreview([]);
       }
     },
     onError: (error) => {
@@ -92,58 +90,53 @@ export function MaintenanceRequestForm({ requesterName }: MaintenanceRequestForm
     },
   });
 
-  const [uploading, setUploading] = useState(false);
   const [attachmentsPreview, setAttachmentsPreview] = useState<File[]>([]);
+  const loadingToastId = useRef<string | number | null>(null);
+
+  // Bloqueio de navegação (Next.js e browser)
+  useEffect(() => {
+    const handleWindowClose = (e: BeforeUnloadEvent) => {
+      if (form.formState.isSubmitting) {
+        e.preventDefault();
+        e.returnValue = '';
+        return '';
+      }
+    };
+    window.addEventListener('beforeunload', handleWindowClose);
+    return () => window.removeEventListener('beforeunload', handleWindowClose);
+  }, [form.formState.isSubmitting]);
+
+  // Bloqueio de navegação interna (Next.js App Router)
+  useEffect(() => {
+    if (!form.formState.isSubmitting) return;
+    const handler = (e: PopStateEvent) => {
+      e.preventDefault();
+      // PopStateEvent não tem returnValue, só previne
+    };
+    window.history.pushState(null, '', window.location.href);
+    window.addEventListener('popstate', handler);
+    return () => window.removeEventListener('popstate', handler);
+  }, [form.formState.isSubmitting]);
+
+  // Toast de loading
+  useEffect(() => {
+    if (form.formState.isSubmitting && !loadingToastId.current) {
+      loadingToastId.current = toast.loading('Enviando requisição, aguarde...');
+    }
+    if (!form.formState.isSubmitting && loadingToastId.current) {
+      toast.dismiss(loadingToastId.current);
+      loadingToastId.current = null;
+    }
+  }, [form.formState.isSubmitting]);
 
   async function onSubmit(values: MaintenanceFormValues) {
-    // 1. Cria a requisição sem anexos
-    const result = await execute({
+    await execute({
       ...values,
       title: `${values.maintenanceType} - ${values.location}`,
       type: 'maintenance',
       requesterName,
-      attachments: [],
+      attachments: attachmentsPreview,
     });
-    if (!result?.data?.id || !result?.data?.driveFolderId) {
-      toast.error('Erro ao criar requisição ou obter pasta de anexos.');
-      return;
-    }
-    // 2. Se houver anexos, faz upload para a subpasta correta
-    let attachments: { id: string; name: string; webViewLink?: string }[] = [];
-    if (attachmentsPreview.length > 0) {
-      setUploading(true);
-      const formData = new FormData();
-      attachmentsPreview.forEach((file: File) => formData.append('files', file));
-      formData.append('driveFolderId', result.data.driveFolderId);
-      try {
-        const res = await fetch('/api/upload/upload-temp', {
-          method: 'POST',
-          body: formData,
-        });
-        if (!res.ok) {
-          throw new Error('Falha ao enviar anexos.');
-        }
-        const uploaded = await res.json();
-        if (!Array.isArray(uploaded)) {
-          throw new Error('Resposta inesperada do upload.');
-        }
-        attachments = uploaded;
-      } catch (e: unknown) {
-        let errorMsg = 'Erro ao fazer upload dos anexos.';
-        if (e instanceof Error) errorMsg = e.message;
-        toast.error(errorMsg);
-        setUploading(false);
-        return;
-      }
-      setUploading(false);
-      // 3. Atualiza os attachments da requisição
-      await fetch(`/api/requests/${result.data.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ attachments }),
-      });
-    }
-    toast.success('Requisição criada com sucesso!');
     form.reset();
     setAttachmentsPreview([]);
   }
@@ -223,7 +216,7 @@ export function MaintenanceRequestForm({ requesterName }: MaintenanceRequestForm
                     type="file"
                     multiple
                     accept="application/pdf,image/jpeg"
-                    disabled={uploading || form.formState.isSubmitting}
+                    disabled={form.formState.isSubmitting}
                     onChange={e => {
                       const files = Array.from(e.target.files || []);
                       if (files.length > 5) {
@@ -266,16 +259,11 @@ export function MaintenanceRequestForm({ requesterName }: MaintenanceRequestForm
                       ))}
                     </div>
                   )}
-                  {uploading && (
-                    <div className="flex items-center gap-2 mt-2 text-primary text-xs">
-                      <Loader2 className="w-4 h-4 animate-spin" /> Enviando anexos...
-                    </div>
-                  )}
                 </FormItem>
               )}
             />
-            <Button type="submit" disabled={form.formState.isSubmitting || uploading} className="w-full">
-              {form.formState.isSubmitting || uploading ? (
+            <Button type="submit" disabled={form.formState.isSubmitting} className="w-full">
+              {form.formState.isSubmitting ? (
                 <Loader2 className="animate-spin mr-2 h-4 w-4 inline" />
               ) : null}
               Criar Requisição
