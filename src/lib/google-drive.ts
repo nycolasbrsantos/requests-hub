@@ -125,6 +125,11 @@ export function getRootFolderIdByType(type: 'purchase' | 'it_support' | 'mainten
   if (type === 'purchase') return process.env.DRIVE_PURCHASES_FOLDER_ID!;
   if (type === 'it_support') return process.env.DRIVE_SUPPORT_FOLDER_ID!;
   if (type === 'maintenance') return process.env.DRIVE_MAINTENANCE_FOLDER_ID!;
-  throw new Error('Tipo de requisição inválido');
+  // Se nenhuma das opções, usar a raiz do Drive se GOOGLE_DRIVE_ROOT_FOLDER_ID estiver definida
+  if (process.env.GOOGLE_DRIVE_ROOT_FOLDER_ID) {
+    if (process.env.GOOGLE_DRIVE_ROOT_FOLDER_ID === 'root') return 'root';
+    return process.env.GOOGLE_DRIVE_ROOT_FOLDER_ID;
+  }
+  throw new Error('Tipo de requisição inválido ou pasta raiz não definida');
 } 
  
