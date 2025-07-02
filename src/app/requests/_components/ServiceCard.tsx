@@ -2,6 +2,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { ShoppingCart, Headphones, Wrench } from 'lucide-react';
 import Link from 'next/link';
 import React from 'react';
+import { toast } from 'sonner';
 
 interface ServiceCardProps {
   icon: 'shopping' | 'support' | 'maintenance';
@@ -17,8 +18,15 @@ const icons = {
 };
 
 export function ServiceCard({ icon, title, description, href }: ServiceCardProps) {
+  // Intercepta clique no card de suporte
+  const handleClick = (e: React.MouseEvent) => {
+    if (icon === 'support') {
+      e.preventDefault();
+      toast.warning('O módulo de Suporte de T.I. estará disponível em breve.', { position: 'top-center' });
+    }
+  };
   return (
-    <Link href={href} className="block">
+    <Link href={href} className="block" onClick={handleClick} tabIndex={icon === 'support' ? -1 : 0} aria-disabled={icon === 'support'}>
       <Card className="flex flex-col items-center p-6 hover:shadow-lg transition-shadow cursor-pointer h-full">
         {icons[icon]}
         <CardContent className="p-0 text-center">

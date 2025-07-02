@@ -60,6 +60,20 @@ export async function POST(
     if (!filesData || filesData.length === 0) {
       return NextResponse.json({ error: 'Nenhum arquivo enviado.' }, { status: 400 });
     }
+    // Validação: máximo 5 arquivos
+    if (filesData.length > 5) {
+      return NextResponse.json({ error: 'Você pode anexar no máximo 5 arquivos.' }, { status: 400 });
+    }
+    // Validação de tipo e tamanho
+    for (const file of filesData) {
+      if (typeof file === 'string') continue;
+      if (!['application/pdf', 'image/jpeg'].includes(file.type)) {
+        return NextResponse.json({ error: `O arquivo "${file.name}" não é PDF ou JPEG.` }, { status: 400 });
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        return NextResponse.json({ error: `O arquivo "${file.name}" excede 5MB.` }, { status: 400 });
+      }
+    }
     // Buscar pasta do Google Drive associada à requisição
     // Supondo que o ID da pasta seja igual ao ID da requisição (ajuste se necessário)
     const driveFolderId = requestId;
