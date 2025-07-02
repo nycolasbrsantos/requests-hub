@@ -1,16 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
-import { files, File } from '@/db/schema';
+import { files, File, requests } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { uploadFileToFolder } from '@/lib/google-drive';
 
-export async function GET(
-  req: NextRequest,
-  context: any
-) {
+export async function GET(req: NextRequest, context: any) {
+  const { params } = await context;
+  const requestId = params.requestId;
   try {
-    const requestId = context.params.requestId;
     const reqIdNum = Number(requestId);
     if (isNaN(reqIdNum)) {
       return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
@@ -43,15 +41,19 @@ export async function GET(
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function POST(
-  req: NextRequest,
-  context: any
-) {
+export async function POST(req: NextRequest, context: any) {
+  const { params } = await context;
+  const requestId = params.requestId;
   try {
-    const requestId = context.params.requestId;
     const reqIdNum = Number(requestId);
     if (isNaN(reqIdNum)) {
       return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
+    }
+    // Buscar pasta do Google Drive associada à requisição
+    const requestRow = await db.select().from(requests).where(eq(requests.id, reqIdNum));
+    const driveFolderId = requestRow[0]?.driveFolderId;
+    if (!driveFolderId) {
+      return NextResponse.json({ error: 'Pasta do Google Drive não encontrada para esta requisição.' }, { status: 400 });
     }
     // Parse multipart form
     const formData = await req.formData();
@@ -74,9 +76,6 @@ export async function POST(
         return NextResponse.json({ error: `O arquivo "${file.name}" excede 5MB.` }, { status: 400 });
       }
     }
-    // Buscar pasta do Google Drive associada à requisição
-    // Supondo que o ID da pasta seja igual ao ID da requisição (ajuste se necessário)
-    const driveFolderId = requestId;
     const results = [];
     for (const file of filesData) {
       if (typeof file === 'string') continue;

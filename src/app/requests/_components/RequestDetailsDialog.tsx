@@ -41,6 +41,11 @@ interface RequestDetails {
   unitPrice?: number;
   attachments: Attachment[];
   statusHistory: StatusHistoryItem[];
+  priority?: string;
+  location?: string;
+  maintenanceType?: string;
+  issueTitle?: string;
+  urgency?: string;
 }
 
 interface RequestDetailsDialogProps {
@@ -168,12 +173,30 @@ export default function RequestDetailsDialog({ requestId, open, onOpenChange }: 
               </div>
             )}
             
-            {(request.supplier || request.productName || request.quantity || request.unitPrice) && (
-              <div className="space-y-2 text-sm">
-                {request.supplier && <div><b>Fornecedor:</b> {request.supplier}</div>}
+            {/* Campos específicos por tipo de requisição */}
+            {request.type === 'purchase' && (
+              <div className="space-y-2 text-sm border rounded p-2 bg-muted/50">
+                <div className="font-semibold text-primary">Detalhes de Compra</div>
                 {request.productName && <div><b>Produto:</b> {request.productName}</div>}
                 {request.quantity && <div><b>Quantidade:</b> {request.quantity}</div>}
                 {request.unitPrice && <div><b>Preço Unitário:</b> R$ {request.unitPrice}</div>}
+                {request.supplier && <div><b>Fornecedor:</b> {request.supplier}</div>}
+                {request.priority && <div><b>Prioridade:</b> {request.priority}</div>}
+              </div>
+            )}
+            {request.type === 'maintenance' && (
+              <div className="space-y-2 text-sm border rounded p-2 bg-muted/50">
+                <div className="font-semibold text-primary">Detalhes de Manutenção</div>
+                {request.location && <div><b>Local:</b> {request.location}</div>}
+                {request.maintenanceType && <div><b>Tipo de Manutenção:</b> {request.maintenanceType}</div>}
+                {request.priority && <div><b>Prioridade:</b> {request.priority}</div>}
+              </div>
+            )}
+            {["it_support", "it_ticket"].includes(request.type) && (
+              <div className="space-y-2 text-sm border rounded p-2 bg-muted/50">
+                <div className="font-semibold text-primary">Detalhes de Suporte T.I.</div>
+                {request.issueTitle && <div><b>Título do Problema:</b> {request.issueTitle}</div>}
+                {request.urgency && <div><b>Urgência:</b> {request.urgency}</div>}
               </div>
             )}
             

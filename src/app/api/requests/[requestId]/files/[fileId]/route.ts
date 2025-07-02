@@ -10,8 +10,9 @@ export async function DELETE(
   context: any
 ) {
   try {
-    const requestId = Number(context.params.requestId);
-    const fileId = Number(context.params.fileId);
+    const { params } = await context;
+    const requestId = Number(params.requestId);
+    const fileId = Number(params.fileId);
     if (isNaN(requestId) || isNaN(fileId)) {
       return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
     }

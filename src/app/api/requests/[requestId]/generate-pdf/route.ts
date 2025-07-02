@@ -6,10 +6,8 @@ import { generateRequestPdf } from '@/lib/generate-request-pdf';
 
 export const runtime = 'nodejs';
 
-export async function GET(
-  req: NextRequest,
-  { params }: { params: { requestId: string } }
-) {
+export async function GET(req: NextRequest, context: any) {
+  const { params } = await context;
   const requestId = Number(params.requestId);
   if (isNaN(requestId)) {
     return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
