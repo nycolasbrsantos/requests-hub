@@ -2,17 +2,33 @@
 import React, { useState } from 'react'
 import { PageContainer } from '@/components/ui/page-container'
 import { CreateRequestForm } from './_components/CreateRequestForm'
-import { ArrowLeft, ShoppingCart } from 'lucide-react'
+import { ArrowLeft, ShoppingCart, Wrench, Headphones } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useSession } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 
 export default function AddRequestPage() {
   const { data: session } = useSession()
   const userName = session?.user?.name || ''
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const params = useSearchParams();
+  const type = params.get('type');
+
+  let icon = <ShoppingCart className="w-8 h-8 text-primary" />;
+  let title = 'Nova Requisição de Compras';
+  let subtitle = 'Preencha os campos abaixo para solicitar uma nova compra. Seja detalhista para agilizar o atendimento.';
+  if (type === 'maintenance') {
+    icon = <Wrench className="w-8 h-8 text-primary" />;
+    title = 'Nova Requisição de Manutenção';
+    subtitle = 'Preencha os campos abaixo para solicitar uma nova manutenção. Seja detalhista para agilizar o atendimento.';
+  } else if (type === 'it_support') {
+    icon = <Headphones className="w-8 h-8 text-primary" />;
+    title = 'Novo Chamado de Suporte de T.I.';
+    subtitle = 'Preencha os campos abaixo para abrir um chamado de suporte técnico.';
+  }
+
   return (
     <PageContainer className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100">
       <Card className="shadow-2xl w-full max-w-3xl my-12 rounded-2xl border border-primary/20 bg-white/90 transition-all px-2 sm:px-0">
@@ -31,10 +47,10 @@ export default function AddRequestPage() {
             Voltar para Home
           </Button>
           <div className="flex items-center gap-3 mt-2">
-            <ShoppingCart className="w-8 h-8 text-primary" />
-            <CardTitle className="text-3xl font-extrabold text-primary tracking-tight">Nova Requisição de Compras</CardTitle>
+            {icon}
+            <CardTitle className="text-3xl font-extrabold text-primary tracking-tight">{title}</CardTitle>
           </div>
-          <p className="text-muted-foreground text-base mt-1 mb-2 text-center max-w-xl">Preencha os campos abaixo para solicitar uma nova compra. Seja detalhista para agilizar o atendimento.</p>
+          <p className="text-muted-foreground text-base mt-1 mb-2 text-center max-w-xl">{subtitle}</p>
         </CardHeader>
         <CardContent className="pt-0 pb-8 px-6 sm:px-10">
           <CreateRequestForm requesterName={userName} isLoading={isLoading} setIsLoading={setIsLoading} />

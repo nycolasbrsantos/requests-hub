@@ -7,18 +7,19 @@ import * as z from 'zod';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useState, useEffect, useRef } from 'react';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Flag, UploadCloud, Send, Info, X } from 'lucide-react';
 import { createRequest } from '@/actions/create-request';
 import {
   Form,
   FormField,
   FormItem,
   FormLabel,
-  FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const MAX_FILES = 5;
 
@@ -34,11 +35,10 @@ type MaintenanceFormValues = z.infer<typeof maintenanceSchema>;
 
 interface MaintenanceRequestFormProps {
   requesterName: string;
-  isLoading: boolean;
   setIsLoading: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-export function MaintenanceRequestForm({ requesterName, isLoading, setIsLoading }: MaintenanceRequestFormProps) {
+export function MaintenanceRequestForm({ requesterName, setIsLoading }: MaintenanceRequestFormProps) {
   const form = useForm<MaintenanceFormValues>({
     resolver: zodResolver(maintenanceSchema),
     defaultValues: {
@@ -96,6 +96,7 @@ export function MaintenanceRequestForm({ requesterName, isLoading, setIsLoading 
 
   const [attachmentsPreview, setAttachmentsPreview] = useState<File[]>([]);
   const loadingToastId = useRef<string | number | null>(null);
+  const [isLoadingSkeleton, setIsLoadingSkeleton] = useState(true);
 
   // Bloqueio de navegação (Next.js e browser)
   useEffect(() => {
@@ -133,6 +134,11 @@ export function MaintenanceRequestForm({ requesterName, isLoading, setIsLoading 
     }
   }, [form.formState.isSubmitting]);
 
+  useEffect(() => {
+    const timer = setTimeout(() => setIsLoadingSkeleton(false), 900);
+    return () => clearTimeout(timer);
+  }, []);
+
   async function onSubmit(values: MaintenanceFormValues) {
     setIsLoading(true);
     await execute({
@@ -146,25 +152,48 @@ export function MaintenanceRequestForm({ requesterName, isLoading, setIsLoading 
     setAttachmentsPreview([]);
   }
 
+  // Função utilitária para cor da bandeira
+  function getFlagColor(priority: string) {
+    if (priority === 'low') return 'text-green-600';
+    if (priority === 'medium') return 'text-yellow-500';
+    if (priority === 'high') return 'text-red-600';
+    return 'text-muted-foreground';
+  }
+
+  if (isLoadingSkeleton) {
+    return (
+      <div className="relative">
+        <Card className="max-w-5xl mx-auto shadow-lg border-primary/20 rounded-2xl">
+          <div className="pt-6" />
+          <CardContent className="pt-0 pb-8 px-2 sm:px-10 space-y-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-12 w-full" />
+            </div>
+            <Skeleton className="h-12 w-full" />
+            <Skeleton className="h-24 w-full" />
+            <Skeleton className="h-20 w-full rounded-xl" />
+            <Skeleton className="h-12 w-full rounded-lg" />
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="relative">
-      <Card className="max-w-xl mx-auto shadow-lg border-primary/20">
-        <CardHeader>
-          <CardTitle>Nova Requisição de Manutenção Predial</CardTitle>
-          <CardDescription>Preencha os campos abaixo para solicitar uma manutenção na infraestrutura.</CardDescription>
-        </CardHeader>
-        <CardContent>
+      <Card className="max-w-5xl mx-auto shadow-lg border-primary/20 rounded-2xl">
+        <CardContent className="pt-0 pb-8 px-2 sm:px-10">
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
                   name="location"
                   render={({ field }) => (
-                    <FormItem>
-                      <FormLabel htmlFor="location">Local</FormLabel>
-                      <Input id="location" placeholder="Ex: Sala 101" {...field} />
-                      <FormMessage />
+                    <FormItem className="relative w-full">
+                      <FormLabel htmlFor="location" className={form.formState.errors.location ? 'text-destructive' : ''}>Local</FormLabel>
+                      <Input id="location" placeholder="Ex: Sala 101" {...field} className="w-full text-base" />
                     </FormItem>
                   )}
                 />
@@ -172,60 +201,107 @@ export function MaintenanceRequestForm({ requesterName, isLoading, setIsLoading 
                   control={form.control}
                   name="maintenanceType"
                   render={({ field }) => (
-                    <FormItem>
-                      <FormLabel htmlFor="maintenanceType">Tipo de Manutenção</FormLabel>
-                      <Input id="maintenanceType" placeholder="Ex: Elétrica, Hidráulica..." {...field} />
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="priority"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel htmlFor="priority">Prioridade</FormLabel>
-                      <Select value={field.value} onValueChange={field.onChange}>
-                        <SelectTrigger id="priority">
-                          <SelectValue placeholder="Selecione" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="low">Baixa</SelectItem>
-                          <SelectItem value="medium">Média</SelectItem>
-                          <SelectItem value="high">Alta</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
+                    <FormItem className="relative w-full">
+                      <FormLabel htmlFor="maintenanceType" className={form.formState.errors.maintenanceType ? 'text-destructive' : ''}>Tipo de Manutenção</FormLabel>
+                      <Input id="maintenanceType" placeholder="Ex: Elétrica, Hidráulica..." {...field} className="w-full text-base" />
                     </FormItem>
                   )}
                 />
               </div>
+              {/* Prioridade */}
+              <FormField
+                control={form.control}
+                name="priority"
+                render={({ field }) => (
+                  <FormItem className="w-full">
+                    <div className="flex items-center gap-2 mb-1">
+                      <FormLabel htmlFor="priority" className={form.formState.errors.priority ? 'text-destructive' : ''}>Prioridade</FormLabel>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="w-4 h-4 text-muted-foreground cursor-pointer ml-1" aria-label="Ajuda sobre prioridade" />
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="max-w-xs text-sm">
+                            Defina a prioridade da requisição para ajudar no atendimento. Alta = urgente.
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                    <div className="relative">
+                      <Flag className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors ${getFlagColor(field.value)}`} />
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <SelectTrigger id="priority" className="pl-10 w-full text-base transition-all focus:ring-2 focus:ring-primary">
+                          <SelectValue placeholder="Selecione" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="low">
+                            <span className="text-green-600 font-medium">Baixa</span>
+                          </SelectItem>
+                          <SelectItem value="medium">
+                            <span className="text-yellow-500 font-medium">Média</span>
+                          </SelectItem>
+                          <SelectItem value="high">
+                            <span className="text-red-600 font-medium">Alta</span>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </FormItem>
+                )}
+              />
+              {/* Descrição */}
               <FormField
                 control={form.control}
                 name="description"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel htmlFor="description">Descrição</FormLabel>
-                    <Textarea id="description" placeholder="Descreva a necessidade da manutenção..." rows={3} {...field} />
-                    <FormMessage />
+                  <FormItem className="w-full">
+                    <FormLabel htmlFor="description" className={form.formState.errors.description ? 'text-destructive' : ''}>Descrição</FormLabel>
+                    <Textarea id="description" placeholder="Descreva a necessidade da manutenção..." rows={3} {...field} className="w-full text-base" />
                   </FormItem>
                 )}
               />
+              {/* Anexos com dropzone visual e badge de quantidade */}
               <FormField
                 control={form.control}
                 name="attachments"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel htmlFor="attachments">Anexos</FormLabel>
-                    <Input
-                      id="attachments"
-                      type="file"
-                      multiple
-                      accept="application/pdf,image/jpeg"
-                      disabled={form.formState.isSubmitting}
-                      onChange={e => {
-                        const files = Array.from(e.target.files || []);
-                        if (files.length > 5) {
+                render={() => (
+                  <FormItem className="w-full">
+                    <div className="flex items-center gap-2 mb-1">
+                      <FormLabel htmlFor="attachments" className={form.formState.errors.attachments ? 'text-destructive' : ''}>Anexos</FormLabel>
+                      {attachmentsPreview.length > 0 && (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 animate-fade-in">
+                          {attachmentsPreview.length}
+                        </span>
+                      )}
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="w-4 h-4 text-muted-foreground cursor-pointer ml-1" aria-label="Ajuda sobre anexos" />
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="max-w-xs text-sm">
+                            Você pode anexar até 5 arquivos PDF ou JPEG, cada um com até 5MB. Arraste e solte ou clique na área abaixo.
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                    <div
+                      className={`
+                        relative flex flex-col items-center justify-center gap-2 border-2 border-dashed rounded-xl py-6 px-2 sm:px-4 transition-colors duration-200
+                        ${form.formState.isSubmitting ? 'bg-muted/60 cursor-not-allowed' : 'bg-muted/40 hover:bg-blue-50 hover:border-primary/60 cursor-pointer'}
+                      `}
+                      onDragOver={e => {
+                        e.preventDefault();
+                        if (!form.formState.isSubmitting) e.currentTarget.classList.add('border-primary');
+                      }}
+                      onDragLeave={e => {
+                        e.preventDefault();
+                        e.currentTarget.classList.remove('border-primary');
+                      }}
+                      onDrop={e => {
+                        e.preventDefault();
+                        if (form.formState.isSubmitting) return;
+                        const files = Array.from(e.dataTransfer.files || []);
+                        if (files.length + attachmentsPreview.length > 5) {
                           toast.error('Você pode anexar no máximo 5 arquivos.');
                           return;
                         }
@@ -239,27 +315,60 @@ export function MaintenanceRequestForm({ requesterName, isLoading, setIsLoading 
                             return;
                           }
                         }
-                        field.onChange(files);
-                        setAttachmentsPreview(files);
+                        const newFiles = [...attachmentsPreview, ...files].slice(0, 5);
+                        setAttachmentsPreview(newFiles);
+                        form.setValue('attachments', newFiles);
                       }}
-                    />
-                    <FormMessage />
+                    >
+                      <UploadCloud className="w-10 h-10 text-primary mb-2 transition-transform duration-200 group-hover:scale-110" />
+                      <span className="text-sm text-muted-foreground text-center select-none">Arraste e solte arquivos PDF/JPEG aqui ou clique para selecionar</span>
+                      <Input
+                        id="attachments"
+                        type="file"
+                        multiple
+                        accept="application/pdf,image/jpeg"
+                        disabled={form.formState.isSubmitting}
+                        onChange={e => {
+                          const files = Array.from(e.target.files || []);
+                          if (files.length + attachmentsPreview.length > 5) {
+                            toast.error('Você pode anexar no máximo 5 arquivos.');
+                            return;
+                          }
+                          for (const file of files) {
+                            if (file.size > 5 * 1024 * 1024) {
+                              toast.error(`O arquivo "${file.name}" excede 5MB.`);
+                              return;
+                            }
+                            if (!['application/pdf', 'image/jpeg'].includes(file.type)) {
+                              toast.error(`O arquivo "${file.name}" não é PDF ou JPEG.`);
+                              return;
+                            }
+                          }
+                          const newFiles = [...attachmentsPreview, ...files].slice(0, 5);
+                          setAttachmentsPreview(newFiles);
+                          form.setValue('attachments', newFiles);
+                        }}
+                        className="absolute inset-0 opacity-0 cursor-pointer"
+                        style={{ zIndex: 2 }}
+                        aria-label="Selecionar arquivos para anexar"
+                      />
+                    </div>
                     {attachmentsPreview.length > 0 && (
-                      <div className="mt-2 flex flex-wrap gap-2">
+                      <div className="mt-3 flex flex-wrap gap-2">
                         {attachmentsPreview.map((file, idx) => (
-                          <div key={idx} className="flex items-center gap-1 bg-muted px-2 py-1 rounded text-xs">
-                            {file.name}
+                          <div key={idx} className="flex items-center gap-1 bg-blue-50 border border-blue-200 px-2 py-1 rounded text-xs shadow-sm animate-fade-in">
+                            <span className="truncate max-w-[120px]" title={file.name}>{file.name}</span>
                             <button
                               type="button"
                               aria-label={`Remover anexo ${file.name}`}
-                              className="ml-1 text-red-500 hover:text-red-700"
+                              className="ml-1 text-red-500 hover:text-red-700 transition-colors duration-150 p-1 rounded-full focus:outline-none focus:ring-2 focus:ring-red-400"
                               onClick={() => {
                                 const newFiles = attachmentsPreview.filter((_, i) => i !== idx);
                                 setAttachmentsPreview(newFiles);
                                 form.setValue('attachments', newFiles);
                               }}
                             >
-                              Remover
+                              <X className="w-4 h-4" />
                             </button>
                           </div>
                         ))}
@@ -268,12 +377,22 @@ export function MaintenanceRequestForm({ requesterName, isLoading, setIsLoading 
                   </FormItem>
                 )}
               />
-              <Button type="submit" disabled={form.formState.isSubmitting} className="w-full">
-                {form.formState.isSubmitting ? (
-                  <Loader2 className="animate-spin mr-2 h-4 w-4 inline" />
-                ) : null}
-                Criar Requisição
-              </Button>
+              {/* Botão de submit com tooltip e animação */}
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button type="submit" disabled={form.formState.isSubmitting} size="lg" className="w-full gap-2 text-base font-semibold shadow-md py-4 transition-all duration-150 hover:scale-[1.02] active:scale-95 focus:ring-2 focus:ring-primary">
+                      {form.formState.isSubmitting ? (
+                        <Loader2 className="animate-spin mr-2 h-5 w-5" />
+                      ) : (
+                        <Send className="h-5 w-5" />
+                      )}
+                      {form.formState.isSubmitting ? 'Enviando...' : 'Enviar Requisição'}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">Enviar requisição para aprovação</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </form>
           </Form>
         </CardContent>
