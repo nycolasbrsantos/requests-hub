@@ -142,135 +142,142 @@ export function MaintenanceRequestForm({ requesterName }: MaintenanceRequestForm
   }
 
   return (
-    <Card className="max-w-xl mx-auto shadow-lg border-primary/20">
-      <CardHeader>
-        <CardTitle>Nova Requisição de Manutenção Predial</CardTitle>
-        <CardDescription>Preencha os campos abaixo para solicitar uma manutenção na infraestrutura.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="location"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel htmlFor="location">Local</FormLabel>
-                    <Input id="location" placeholder="Ex: Sala 101" {...field} />
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="maintenanceType"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel htmlFor="maintenanceType">Tipo de Manutenção</FormLabel>
-                    <Input id="maintenanceType" placeholder="Ex: Elétrica, Hidráulica..." {...field} />
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="priority"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel htmlFor="priority">Prioridade</FormLabel>
-                    <Select value={field.value} onValueChange={field.onChange}>
-                      <SelectTrigger id="priority">
-                        <SelectValue placeholder="Selecione" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="low">Baixa</SelectItem>
-                        <SelectItem value="medium">Média</SelectItem>
-                        <SelectItem value="high">Alta</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel htmlFor="description">Descrição</FormLabel>
-                  <Textarea id="description" placeholder="Descreva a necessidade da manutenção..." rows={3} {...field} />
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="attachments"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel htmlFor="attachments">Anexos</FormLabel>
-                  <Input
-                    id="attachments"
-                    type="file"
-                    multiple
-                    accept="application/pdf,image/jpeg"
-                    disabled={form.formState.isSubmitting}
-                    onChange={e => {
-                      const files = Array.from(e.target.files || []);
-                      if (files.length > 5) {
-                        toast.error('Você pode anexar no máximo 5 arquivos.');
-                        return;
-                      }
-                      for (const file of files) {
-                        if (file.size > 5 * 1024 * 1024) {
-                          toast.error(`O arquivo "${file.name}" excede 5MB.`);
-                          return;
-                        }
-                        if (!['application/pdf', 'image/jpeg'].includes(file.type)) {
-                          toast.error(`O arquivo "${file.name}" não é PDF ou JPEG.`);
-                          return;
-                        }
-                      }
-                      field.onChange(files);
-                      setAttachmentsPreview(files);
-                    }}
-                  />
-                  <FormMessage />
-                  {attachmentsPreview.length > 0 && (
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      {attachmentsPreview.map((file, idx) => (
-                        <div key={idx} className="flex items-center gap-1 bg-muted px-2 py-1 rounded text-xs">
-                          {file.name}
-                          <button
-                            type="button"
-                            aria-label={`Remover anexo ${file.name}`}
-                            className="ml-1 text-red-500 hover:text-red-700"
-                            onClick={() => {
-                              const newFiles = attachmentsPreview.filter((_, i) => i !== idx);
-                              setAttachmentsPreview(newFiles);
-                              form.setValue('attachments', newFiles);
-                            }}
-                          >
-                            Remover
-                          </button>
-                        </div>
-                      ))}
-                    </div>
+    <div className="relative">
+      <Card className="max-w-xl mx-auto shadow-lg border-primary/20">
+        <CardHeader>
+          <CardTitle>Nova Requisição de Manutenção Predial</CardTitle>
+          <CardDescription>Preencha os campos abaixo para solicitar uma manutenção na infraestrutura.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="location"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel htmlFor="location">Local</FormLabel>
+                      <Input id="location" placeholder="Ex: Sala 101" {...field} />
+                      <FormMessage />
+                    </FormItem>
                   )}
-                </FormItem>
-              )}
-            />
-            <Button type="submit" disabled={form.formState.isSubmitting} className="w-full">
-              {form.formState.isSubmitting ? (
-                <Loader2 className="animate-spin mr-2 h-4 w-4 inline" />
-              ) : null}
-              Criar Requisição
-            </Button>
-          </form>
-        </Form>
-      </CardContent>
-    </Card>
+                />
+                <FormField
+                  control={form.control}
+                  name="maintenanceType"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel htmlFor="maintenanceType">Tipo de Manutenção</FormLabel>
+                      <Input id="maintenanceType" placeholder="Ex: Elétrica, Hidráulica..." {...field} />
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="priority"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel htmlFor="priority">Prioridade</FormLabel>
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <SelectTrigger id="priority">
+                          <SelectValue placeholder="Selecione" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="low">Baixa</SelectItem>
+                          <SelectItem value="medium">Média</SelectItem>
+                          <SelectItem value="high">Alta</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel htmlFor="description">Descrição</FormLabel>
+                    <Textarea id="description" placeholder="Descreva a necessidade da manutenção..." rows={3} {...field} />
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="attachments"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel htmlFor="attachments">Anexos</FormLabel>
+                    <Input
+                      id="attachments"
+                      type="file"
+                      multiple
+                      accept="application/pdf,image/jpeg"
+                      disabled={form.formState.isSubmitting}
+                      onChange={e => {
+                        const files = Array.from(e.target.files || []);
+                        if (files.length > 5) {
+                          toast.error('Você pode anexar no máximo 5 arquivos.');
+                          return;
+                        }
+                        for (const file of files) {
+                          if (file.size > 5 * 1024 * 1024) {
+                            toast.error(`O arquivo "${file.name}" excede 5MB.`);
+                            return;
+                          }
+                          if (!['application/pdf', 'image/jpeg'].includes(file.type)) {
+                            toast.error(`O arquivo "${file.name}" não é PDF ou JPEG.`);
+                            return;
+                          }
+                        }
+                        field.onChange(files);
+                        setAttachmentsPreview(files);
+                      }}
+                    />
+                    <FormMessage />
+                    {attachmentsPreview.length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {attachmentsPreview.map((file, idx) => (
+                          <div key={idx} className="flex items-center gap-1 bg-muted px-2 py-1 rounded text-xs">
+                            {file.name}
+                            <button
+                              type="button"
+                              aria-label={`Remover anexo ${file.name}`}
+                              className="ml-1 text-red-500 hover:text-red-700"
+                              onClick={() => {
+                                const newFiles = attachmentsPreview.filter((_, i) => i !== idx);
+                                setAttachmentsPreview(newFiles);
+                                form.setValue('attachments', newFiles);
+                              }}
+                            >
+                              Remover
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </FormItem>
+                )}
+              />
+              <Button type="submit" disabled={form.formState.isSubmitting} className="w-full">
+                {form.formState.isSubmitting ? (
+                  <Loader2 className="animate-spin mr-2 h-4 w-4 inline" />
+                ) : null}
+                Criar Requisição
+              </Button>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
+      {form.formState.isSubmitting && (
+        <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/40 rounded-xl">
+          <Loader2 className="h-12 w-12 animate-spin text-white" />
+        </div>
+      )}
+    </div>
   );
 } 
