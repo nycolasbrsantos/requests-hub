@@ -5,7 +5,7 @@ import dayjs from 'dayjs';
 import { StatusBadge } from './StatusBadge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
-import { MoreVertical, Info, CheckCircle2, XCircle, ArrowUpDown, ArrowUp, ArrowDown, Loader2, FileQuestion, Clock, Paperclip, Trash2, Plus, Search, Calendar, ShoppingCart, Wrench, Headphones } from 'lucide-react';
+import { MoreVertical, Info, CheckCircle2, XCircle, ArrowUpDown, ArrowUp, ArrowDown, Loader2, FileQuestion, Clock, Paperclip, Trash2, Plus, Search, Calendar, ShoppingCart, Wrench } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { useSession } from 'next-auth/react';
@@ -46,7 +46,7 @@ export default function RequestsTable({ requests, isLoading = false }: RequestsT
   const router = useRouter();
   const [status, setStatus] = useState('all');
   const [type, setType] = useState('all');
-  const [openDetailsId, setOpenDetailsId] = useState<number | null>(null);
+  const [openDetailsId, setOpenDetailsId] = useState<string | null>(null);
   const [openHistoryId, setOpenHistoryId] = useState<number | null>(null);
   const [search, setSearch] = useState('');
   const [dateStart, setDateStart] = useState('');
@@ -221,14 +221,14 @@ export default function RequestsTable({ requests, isLoading = false }: RequestsT
       <div className="mb-2 text-sm text-muted-foreground">
         {totalFiltered === 1 ? '1 requisição encontrada' : `${totalFiltered} requisições encontradas`}
       </div>
-      <div className="flex flex-wrap gap-2 mb-4 items-end w-full">
-        <div className="relative w-full sm:w-64">
+      <div className="flex flex-wrap gap-2 mb-4 items-end w-full sm:flex-col md:flex-row">
+        <div className="relative w-full sm:w-full md:w-64">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
             value={search}
             onChange={e => setSearch(e.target.value)}
-            placeholder="Buscar por título, solicitante ou ID"
-            className="pl-10 pr-4 w-full"
+            placeholder="Buscar por ID ou status"
+            className="pl-9 pr-3 py-2 text-sm rounded-md"
           />
         </div>
         <Select value={status} onValueChange={setStatus}>
@@ -269,7 +269,7 @@ export default function RequestsTable({ requests, isLoading = false }: RequestsT
             className="pl-10 pr-4 w-full"
           />
         </div>
-        <Button variant="ghost" onClick={handleClearFilters} className="ml-0 sm:ml-2 flex items-center gap-1 text-destructive">
+        <Button variant="ghost" onClick={handleClearFilters} className="ml-0 sm:ml-2 flex items-center gap-1 text-destructive min-h-10 min-w-10">
           <XCircle className="w-4 h-4" /> Limpar
         </Button>
       </div>
@@ -277,7 +277,7 @@ export default function RequestsTable({ requests, isLoading = false }: RequestsT
         <AnimatePresence mode="wait">
           <motion.table
             key={JSON.stringify([status, type, search, dateStart, dateEnd, sort, page])}
-            className="min-w-full"
+            className="min-w-[600px] text-sm"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -285,27 +285,21 @@ export default function RequestsTable({ requests, isLoading = false }: RequestsT
           >
             <thead>
               <tr className="border-b">
-                <th className="px-4 py-2 text-left whitespace-nowrap cursor-pointer select-none" onClick={() => handleSort('customId')}>
-                  ID {sort.key === 'customId' ? (sort.direction === 'asc' ? <ArrowUp className="inline w-4 h-4 ml-1 text-primary" /> : <ArrowDown className="inline w-4 h-4 ml-1 text-primary" />) : <ArrowUpDown className="inline w-4 h-4 ml-1 text-muted-foreground" />}
-                </th>
-                <th className="px-4 py-2 text-left whitespace-nowrap cursor-pointer select-none" onClick={() => handleSort('type')}>
-                  Tipo {sort.key === 'type' ? (sort.direction === 'asc' ? <ArrowUp className="inline w-4 h-4 ml-1 text-primary" /> : <ArrowDown className="inline w-4 h-4 ml-1 text-primary" />) : <ArrowUpDown className="inline w-4 h-4 ml-1 text-muted-foreground" />}
-                </th>
-                <th className="px-4 py-2 text-left whitespace-nowrap cursor-pointer select-none" onClick={() => handleSort('status')}>
-                  Status {sort.key === 'status' ? (sort.direction === 'asc' ? <ArrowUp className="inline w-4 h-4 ml-1 text-primary" /> : <ArrowDown className="inline w-4 h-4 ml-1 text-primary" />) : <ArrowUpDown className="inline w-4 h-4 ml-1 text-muted-foreground" />}
-                </th>
-                <th className="px-4 py-2 text-left whitespace-nowrap max-w-xs cursor-pointer select-none" onClick={() => handleSort('requesterName')}>
+                <th className="px-4 py-2 text-left whitespace-nowrap text-xs font-semibold">ID</th>
+                <th className="px-4 py-2 text-left whitespace-nowrap text-xs font-semibold">Tipo</th>
+                <th className="px-4 py-2 text-left whitespace-nowrap text-xs font-semibold hidden md:table-cell">Status</th>
+                <th className="px-4 py-2 text-left whitespace-nowrap max-w-xs text-xs font-semibold" onClick={() => handleSort('requesterName')}>
                   Solicitante {sort.key === 'requesterName' ? (sort.direction === 'asc' ? <ArrowUp className="inline w-4 h-4 ml-1 text-primary" /> : <ArrowDown className="inline w-4 h-4 ml-1 text-primary" />) : <ArrowUpDown className="inline w-4 h-4 ml-1 text-muted-foreground" />}
                 </th>
-                <th className="px-4 py-2 text-left whitespace-nowrap cursor-pointer select-none" onClick={() => handleSort('createdAt')}>
+                <th className="px-4 py-2 text-left whitespace-nowrap text-xs font-semibold" onClick={() => handleSort('createdAt')}>
                   Data {sort.key === 'createdAt' ? (sort.direction === 'asc' ? <ArrowUp className="inline w-4 h-4 ml-1 text-primary" /> : <ArrowDown className="inline w-4 h-4 ml-1 text-primary" />) : <ArrowUpDown className="inline w-4 h-4 ml-1 text-muted-foreground" />}
                 </th>
-                <th className="px-4 py-2 text-left whitespace-nowrap">Ações</th>
+                <th className="px-4 py-2 text-left whitespace-nowrap text-xs font-semibold">Ações</th>
               </tr>
             </thead>
             <tbody>
               {paginatedRequests.map((req) => (
-                <tr key={req.id} className="border-b hover:bg-muted/50">
+                <tr key={req.id} className="border-b hover:bg-muted/50 align-middle text-xs">
                   <td className="px-4 py-2 whitespace-nowrap">{req.customId || req.id}</td>
                   <td className="px-4 py-2 whitespace-nowrap flex items-center justify-center">
                     <TooltipProvider>
@@ -314,43 +308,26 @@ export default function RequestsTable({ requests, isLoading = false }: RequestsT
                           <span>
                             {req.type === 'purchase' && (
                               <ShoppingCart
-                                className={
-                                  `w-5 h-5 ${req.priority === 'high' ? 'text-red-600' : req.priority === 'medium' ? 'text-yellow-500' : req.priority === 'low' ? 'text-green-600' : 'text-primary'}`
-                                }
+                                className={`w-5 h-5 ${req.priority === 'high' ? 'text-red-600' : req.priority === 'medium' ? 'text-yellow-500' : req.priority === 'low' ? 'text-green-600' : 'text-primary'}`}
                                 aria-label="Compra"
                               />
                             )}
                             {req.type === 'maintenance' && (
                               <Wrench
-                                className={
-                                  `w-5 h-5 ${req.priority === 'high' ? 'text-red-600' : req.priority === 'medium' ? 'text-yellow-500' : req.priority === 'low' ? 'text-green-600' : 'text-yellow-600'}`
-                                }
+                                className={`w-5 h-5 ${req.priority === 'high' ? 'text-red-600' : req.priority === 'medium' ? 'text-yellow-500' : req.priority === 'low' ? 'text-green-600' : 'text-yellow-600'}`}
                                 aria-label="Manutenção"
-                              />
-                            )}
-                            {["it_ticket", "it_support"].includes(req.type) && (
-                              <Headphones
-                                className={
-                                  `w-5 h-5 ${req.priority === 'high' ? 'text-red-600' : req.priority === 'medium' ? 'text-yellow-500' : req.priority === 'low' ? 'text-green-600' : 'text-blue-600'}`
-                                }
-                                aria-label="Suporte T.I."
                               />
                             )}
                           </span>
                         </TooltipTrigger>
-                        <TooltipContent side="top">
-                          {req.type === 'purchase' && 'Compras'}
-                          {req.type === 'maintenance' && 'Manutenção'}
-                          {['it_ticket', 'it_support'].includes(req.type) && 'T.I.'}
-                          {req.priority && (
-                            <span className="block mt-1 text-xs">Prioridade: {req.priority === 'high' ? 'Alta' : req.priority === 'medium' ? 'Média' : req.priority === 'low' ? 'Baixa' : 'Não definida'}</span>
-                          )}
-                        </TooltipContent>
+                        <TooltipContent>{req.type === 'purchase' ? 'Compra' : req.type === 'maintenance' ? 'Manutenção' : 'T.I.'}</TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
                   </td>
-                  <td className="px-4 py-2 whitespace-nowrap capitalize"><StatusBadge status={req.status as 'pending' | 'approved' | 'rejected' | 'in_progress' | 'completed'} /></td>
-                  <td className="px-4 py-2 whitespace-nowrap max-w-xs truncate">{req.requesterName}</td>
+                  <td className="px-4 py-2 whitespace-nowrap hidden md:table-cell">
+                    <StatusBadge status={req.status} />
+                  </td>
+                  <td className="px-4 py-2 max-w-xs truncate">{req.requesterName}</td>
                   <td className="px-4 py-2 whitespace-nowrap">{dayjs(req.createdAt).format('DD/MM/YYYY HH:mm')}</td>
                   <td className="px-4 py-2 whitespace-nowrap space-x-2">
                     <DropdownMenu>
@@ -363,7 +340,7 @@ export default function RequestsTable({ requests, isLoading = false }: RequestsT
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <DropdownMenuItem onClick={() => setOpenDetailsId(req.id)}>
+                              <DropdownMenuItem onClick={() => setOpenDetailsId(req.customId)}>
                                 Visualizar detalhes
                               </DropdownMenuItem>
                             </TooltipTrigger>
@@ -460,7 +437,7 @@ export default function RequestsTable({ requests, isLoading = false }: RequestsT
                         )}
                       </DropdownMenuContent>
                     </DropdownMenu>
-                    <RequestDetailsDialog requestId={req.id} open={openDetailsId === req.id} onOpenChange={() => setOpenDetailsId(null)} />
+                    <RequestDetailsDialog requestId={req.customId} open={openDetailsId === req.customId} onOpenChange={() => setOpenDetailsId(null)} />
                     <Dialog open={openHistoryId === req.id} onOpenChange={() => setOpenHistoryId(null)}>
                       <DialogContent className="max-w-md">
                         <DialogHeader>

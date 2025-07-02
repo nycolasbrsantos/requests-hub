@@ -1,18 +1,35 @@
 import { useEffect, useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogClose,
+} from '@/components/ui/dialog';
 import { StatusBadge } from './StatusBadge';
-import { Paperclip, Trash2, CheckCircle2, XCircle } from 'lucide-react';
+import {
+  Paperclip,
+  CheckCircle2,
+  XCircle,
+  ShoppingCart,
+  Wrench,
+  Headphones,
+  Flag,
+  FileText,
+  User,
+  CalendarDays,
+  ArrowRightLeft,
+  Loader2,
+  ArrowDownToLine,
+} from 'lucide-react';
 import dayjs from 'dayjs';
-import { Textarea } from '@/components/ui/textarea';
-import { toast } from 'sonner';
-import { updateRequestAttachments } from '@/actions/update-request-status/update-attachments';
-import { useSession } from 'next-auth/react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
-import { DriveUploadForm } from './DriveUploadForm';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { saveAs } from 'file-saver';
 
+// Tipos reutilizáveis
 interface Attachment {
   id: string;
   name: string;
@@ -20,18 +37,20 @@ interface Attachment {
 }
 
 interface StatusHistoryItem {
-  status: string;
+  status: StatusType;
   changedAt: string;
   changedBy: string;
   comment?: string;
 }
+
+type StatusType = 'pending' | 'approved' | 'rejected' | 'in_progress' | 'completed';
 
 interface RequestDetails {
   id: number;
   customId?: string;
   title: string;
   type: string;
-  status: string;
+  status: StatusType;
   requesterName: string;
   createdAt: string;
   description?: string;
@@ -46,6 +65,8 @@ interface RequestDetails {
   maintenanceType?: string;
   issueTitle?: string;
   urgency?: string;
+  equipment?: string;
+  category?: string;
 }
 
 interface RequestDetailsDialogProps {
@@ -54,15 +75,233 @@ interface RequestDetailsDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-const statusOptions = [
-  { value: 'pending', label: 'Pendente' },
-  { value: 'approved', label: 'Aprovada' },
-  { value: 'rejected', label: 'Rejeitada' },
-  { value: 'in_progress', label: 'Em andamento' },
-  { value: 'completed', label: 'Concluída' },
-];
+// Hook para buscar detalhes da requisição
+function useRequestDetails(requestId: number, open: boolean) {
+  const [request, setRequest] = useState<RequestDetails | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-// Função utilitária para gerar PDF no client
+  useEffect(() => {
+    if (!open) return;
+    setLoading(true);
+    setError(null);
+    fetch(`/api/requests/${requestId}`)
+      .then((res) => {
+        if (!res.ok) throw new Error('Erro ao buscar detalhes');
+        return res.json();
+      })
+      .then(setRequest)
+      .catch((e) => setError(e.message))
+      .finally(() => setLoading(false));
+  }, [requestId, open]);
+
+  return { request, loading, error };
+}
+
+// Header do modal
+function RequestDetailsHeader({ request }: { request: RequestDetails }) {
+  return (
+    <div className="flex items-center gap-4 mb-2">
+      {request.type === 'purchase' && (
+        <ShoppingCart className={`w-8 h-8 ${getPriorityColor(request.priority)}`} />
+      )}
+      {request.type === 'maintenance' && (
+        <Wrench className={`w-8 h-8 ${getPriorityColor(request.priority)}`} />
+      )}
+      {["it_support", "it_ticket"].includes(request.type) && (
+        <Headphones className="w-8 h-8 text-blue-600" />
+      )}
+      <div>
+        <div className="flex items-center gap-2">
+          {request.status ? (
+            <Badge className="text-base px-3 py-1 ml-2 shadow-md border-2 border-white/70 animate-fade-in transition-transform duration-150 hover:scale-105 focus-visible:scale-105 focus-visible:ring-2 focus-visible:ring-ring/50">
+              <StatusBadge status={request.status} />
+            </Badge>
+          ) : (
+            <span className="ml-2 text-sm font-medium text-muted-foreground">-</span>
+          )}
+          {request.priority && (
+            <Flag className={`w-5 h-5 ml-2 ${getPriorityColor(request.priority)}`} />
+          )}
+          <span className="ml-2 text-sm font-medium text-muted-foreground">
+            {request.priority ? getPriorityLabel(request.priority) : '-'}
+          </span>
+        </div>
+        <div className="text-lg font-semibold text-primary mt-1">{request.title}</div>
+        <div className="flex gap-4 mt-1 text-sm text-muted-foreground items-center">
+          <span className="flex items-center gap-1">
+            <CalendarDays className="w-4 h-4" />
+            {dayjs(request.createdAt).format('DD/MM/YYYY HH:mm')}
+          </span>
+          {request.requesterName && (
+            <span className="flex items-center gap-1">
+              <User className="w-4 h-4" />
+              {request.requesterName}
+            </span>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Informações gerais
+function RequestGeneralInfo({ request }: { request: RequestDetails }) {
+  return (
+    <div className="bg-white/80 rounded-xl shadow p-4 border">
+      <div className="font-semibold text-primary mb-2 flex items-center gap-2">
+        <FileText className="w-4 h-4" /> Informações Gerais
+      </div>
+      <div className="mb-1"><b>Tipo:</b> {getTypeLabel(request.type)}</div>
+      <div className="mb-1"><b>Status:</b> <StatusBadge status={request.status} /></div>
+      <div className="mb-1"><b>Prioridade:</b> {request.priority ? getPriorityLabel(request.priority) : '-'}</div>
+      {request.description && <div className="mb-1"><b>Descrição:</b> {request.description}</div>}
+    </div>
+  );
+}
+
+// Detalhes específicos
+function RequestSpecificDetails({ request }: { request: RequestDetails }) {
+  if (request.type === 'purchase') {
+    return (
+      <div className="bg-blue-50 rounded-xl shadow p-4 border border-blue-200">
+        <div className="font-semibold text-primary mb-2 flex items-center gap-2">
+          <ShoppingCart className="w-4 h-4" /> Detalhes de Compra
+        </div>
+        {request.productName && <div><b>Produto:</b> {request.productName}</div>}
+        {request.quantity !== undefined && <div><b>Quantidade:</b> {request.quantity}</div>}
+        {request.unitPrice !== undefined && <div><b>Preço Unitário:</b> R$ {request.unitPrice}</div>}
+        {request.supplier && <div><b>Fornecedor:</b> {request.supplier}</div>}
+      </div>
+    );
+  }
+  if (request.type === 'maintenance') {
+    return (
+      <div className="bg-yellow-50 rounded-xl shadow p-4 border border-yellow-200">
+        <div className="font-semibold text-yellow-700 mb-2 flex items-center gap-2">
+          <Wrench className="w-4 h-4" /> Detalhes de Manutenção
+        </div>
+        {request.equipment && <div><b>Equipamento:</b> {request.equipment}</div>}
+        {request.location && <div><b>Local:</b> {request.location}</div>}
+        {request.maintenanceType && <div><b>Tipo de Manutenção:</b> {request.maintenanceType}</div>}
+      </div>
+    );
+  }
+  if (["it_support", "it_ticket"].includes(request.type)) {
+    return (
+      <div className="bg-blue-50 rounded-xl shadow p-4 border border-blue-200">
+        <div className="font-semibold text-blue-700 mb-2 flex items-center gap-2">
+          <Headphones className="w-4 h-4" /> Detalhes de Suporte T.I.
+        </div>
+        {request.category && <div><b>Categoria:</b> {request.category}</div>}
+        {request.issueTitle && <div><b>Título do Problema:</b> {request.issueTitle}</div>}
+        {request.urgency && <div><b>Urgência:</b> {getPriorityLabel(request.urgency)}</div>}
+      </div>
+    );
+  }
+  return null;
+}
+
+// Anexos
+function RequestAttachments({ attachments }: { attachments: Attachment[] }) {
+  return (
+    <div className="bg-white/80 rounded-xl shadow p-4 border">
+      <div className="font-semibold flex items-center gap-2 mb-2">
+        <Paperclip className="w-4 h-4" /> Anexos
+      </div>
+      {attachments && attachments.length > 0 ? (
+        <ul className="space-y-2">
+          {attachments.map((att) => (
+            <li key={att.id} className="flex items-center gap-2">
+              <a
+                href={att.webViewLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary underline flex items-center gap-1"
+              >
+                <Paperclip className="w-4 h-4" /> {att.name}
+              </a>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => att.webViewLink && saveAs(att.webViewLink, att.name)}
+                title="Baixar"
+              >
+                <ArrowDownToLine className="w-4 h-4" />
+              </Button>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <div className="text-muted-foreground text-sm">Nenhum anexo.</div>
+      )}
+    </div>
+  );
+}
+
+// Histórico de status
+function RequestStatusHistory({ history }: { history: StatusHistoryItem[] }) {
+  return (
+    <div className="bg-white/80 rounded-xl shadow p-4 border">
+      <div className="font-semibold flex items-center gap-2 mb-2">
+        <ArrowRightLeft className="w-4 h-4" /> Histórico de Status
+      </div>
+      <ul className="space-y-3 border-l-2 border-primary/30 pl-4">
+        {history && history.length > 0 ? (
+          history.map((item, idx) => (
+            <li key={idx} className="relative">
+              <span className="absolute -left-4 top-1.5 w-3 h-3 rounded-full bg-primary/80 border-2 border-white"></span>
+              <div className="flex items-center gap-2">
+                {item.status === 'approved' && <CheckCircle2 className="w-4 h-4 text-green-600" />}
+                {item.status === 'rejected' && <XCircle className="w-4 h-4 text-red-600" />}
+                {item.status === 'in_progress' && <Loader2 className="w-4 h-4 text-yellow-600 animate-spin" />}
+                {item.status === 'completed' && <CheckCircle2 className="w-4 h-4 text-blue-600" />}
+                <span className="font-semibold capitalize">{item.status}</span>
+                <span className="text-xs text-muted-foreground ml-2">{dayjs(item.changedAt).format('DD/MM/YYYY HH:mm')}</span>
+              </div>
+              {item.comment && <div className="text-xs text-muted-foreground ml-6 mt-1">{item.comment}</div>}
+              <div className="text-xs text-muted-foreground ml-6">Por: {item.changedBy}</div>
+            </li>
+          ))
+        ) : (
+          <li className="text-muted-foreground text-sm">Sem histórico.</li>
+        )}
+      </ul>
+    </div>
+  );
+}
+
+// Ações do rodapé
+function RequestDetailsActions({ request }: { request: RequestDetails }) {
+  return (
+    <Button
+      variant="outline"
+      onClick={() => handleGeneratePdf(request)}
+      title="Gerar PDF da requisição"
+    >
+      <FileText className="w-4 h-4 mr-2" /> Gerar PDF
+    </Button>
+  );
+}
+
+// Funções utilitárias
+function getPriorityColor(priority?: string) {
+  if (priority === 'high') return 'text-red-600';
+  if (priority === 'medium') return 'text-yellow-500';
+  if (priority === 'low') return 'text-green-600';
+  return 'text-primary';
+}
+function getPriorityLabel(priority?: string) {
+  if (priority === 'high') return 'Alta';
+  if (priority === 'medium') return 'Média';
+  if (priority === 'low') return 'Baixa';
+  return '-';
+}
+function getTypeLabel(type: string) {
+  if (type === 'purchase') return 'Compras';
+  if (type === 'maintenance') return 'Manutenção';
+  return 'T.I.';
+}
 async function handleGeneratePdf(request: RequestDetails) {
   const res = await fetch(`/api/requests/${request.id}/generate-pdf`);
   if (!res.ok) {
@@ -73,286 +312,60 @@ async function handleGeneratePdf(request: RequestDetails) {
   saveAs(blob, `Requisicao-${request.customId || request.id}.pdf`);
 }
 
+// Componente principal
 export default function RequestDetailsDialog({ requestId, open, onOpenChange }: RequestDetailsDialogProps) {
-  const { data: session } = useSession();
-  const role = session?.user?.role;
-  const [request, setRequest] = useState<RequestDetails | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [removingAtt, setRemovingAtt] = useState<Attachment | null>(null);
-  const [comment, setComment] = useState('');
-  const [isRemoving, setIsRemoving] = useState(false);
-
-  useEffect(() => {
-    if (open) {
-      setLoading(true);
-      fetch(`/api/requests/${requestId}`)
-        .then(res => res.json())
-        .then(data => setRequest(data))
-        .finally(() => setLoading(false));
-    }
-  }, [open, requestId]);
-
-  const canUpdateStatus = (newStatus: string) => {
-    if (!role || !request) return false;
-    
-    // Admin pode fazer qualquer mudança
-    if (role === 'admin') return true;
-    
-    // Supervisor pode aprovar, reprovar e colocar em andamento
-    if (role === 'supervisor' && ['approved', 'rejected', 'in_progress'].includes(newStatus)) return true;
-    
-    // Encarregado pode finalizar
-    if (role === 'encarregado' && newStatus === 'completed') return true;
-    
-    return false;
-  };
-
-  if (!open) return null;
+  const { request, loading, error } = useRequestDetails(requestId, open);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="min-w-[700px] max-w-2xl p-8">
         <DialogHeader>
-          <div className="flex items-center justify-between">
-            <DialogTitle>Detalhes da Requisição {request?.customId || requestId}</DialogTitle>
-            {request && (role === 'admin' || role === 'supervisor' || role === 'encarregado') && (
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-muted-foreground">Status:</span>
-                <Select 
-                  value={request.status} 
-                  onValueChange={() => {}}
-                >
-                  <SelectTrigger className="w-32 h-8 text-xs">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {statusOptions.map(opt => (
-                      <SelectItem 
-                        key={opt.value} 
-                        value={opt.value}
-                        disabled={!canUpdateStatus(opt.value)}
-                      >
-                        {opt.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+          <DialogTitle>
+            {loading || !request
+              ? 'Detalhes da Requisição'
+              : request.customId || request.title || '-'}
+          </DialogTitle>
+          {loading || !request ? (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-4 w-1/2" />
+                <Skeleton className="h-4 w-2/3" />
               </div>
-            )}
-          </div>
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-4/5" />
+              </div>
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-1/3" />
+                <Skeleton className="h-4 w-2/5" />
+              </div>
+            </div>
+          ) : (
+            <RequestDetailsHeader request={request} />
+          )}
         </DialogHeader>
-        {loading || !request ? (
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Skeleton className="h-4 w-3/4" />
-              <Skeleton className="h-4 w-1/2" />
-              <Skeleton className="h-4 w-2/3" />
+        {error && (
+          <div className="text-destructive text-center py-4">{error}</div>
+        )}
+        {!loading && request && (
+          <div className="grid grid-cols-2 gap-8 mt-4">
+            <div className="space-y-6">
+              <RequestGeneralInfo request={request} />
+              <RequestSpecificDetails request={request} />
             </div>
-            <div className="space-y-2">
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-4/5" />
+            <div className="space-y-6">
+              <RequestAttachments attachments={request.attachments} />
+              <RequestStatusHistory history={request.statusHistory} />
             </div>
-            <div className="space-y-2">
-              <Skeleton className="h-4 w-1/3" />
-              <Skeleton className="h-4 w-2/5" />
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div><b>Título:</b> {request.title}</div>
-              <div><b>Tipo:</b> {request.type}</div>
-              <div><b>Status:</b> <StatusBadge status={request.status as 'pending' | 'approved' | 'rejected' | 'in_progress' | 'completed'} /></div>
-              <div><b>Solicitante:</b> {request.requesterName}</div>
-              <div><b>Data:</b> {dayjs(request.createdAt).format('DD/MM/YYYY HH:mm')}</div>
-            </div>
-            
-            {request.description && (
-              <div className="text-sm">
-                <b>Descrição:</b> {request.description}
-              </div>
-            )}
-            
-            {/* Campos específicos por tipo de requisição */}
-            {request.type === 'purchase' && (
-              <div className="space-y-2 text-sm border rounded p-2 bg-muted/50">
-                <div className="font-semibold text-primary">Detalhes de Compra</div>
-                {request.productName && <div><b>Produto:</b> {request.productName}</div>}
-                {request.quantity && <div><b>Quantidade:</b> {request.quantity}</div>}
-                {request.unitPrice && <div><b>Preço Unitário:</b> R$ {request.unitPrice}</div>}
-                {request.supplier && <div><b>Fornecedor:</b> {request.supplier}</div>}
-                {request.priority && <div><b>Prioridade:</b> {request.priority}</div>}
-              </div>
-            )}
-            {request.type === 'maintenance' && (
-              <div className="space-y-2 text-sm border rounded p-2 bg-muted/50">
-                <div className="font-semibold text-primary">Detalhes de Manutenção</div>
-                {request.location && <div><b>Local:</b> {request.location}</div>}
-                {request.maintenanceType && <div><b>Tipo de Manutenção:</b> {request.maintenanceType}</div>}
-                {request.priority && <div><b>Prioridade:</b> {request.priority}</div>}
-              </div>
-            )}
-            {["it_support", "it_ticket"].includes(request.type) && (
-              <div className="space-y-2 text-sm border rounded p-2 bg-muted/50">
-                <div className="font-semibold text-primary">Detalhes de Suporte T.I.</div>
-                {request.issueTitle && <div><b>Título do Problema:</b> {request.issueTitle}</div>}
-                {request.urgency && <div><b>Urgência:</b> {request.urgency}</div>}
-              </div>
-            )}
-            
-            {/* NOVO BLOCO DE ANEXOS GOOGLE DRIVE */}
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <Paperclip className="w-4 h-4 text-muted-foreground" />
-                <b className="text-sm">Anexos</b>
-              </div>
-              {/* Formulário de upload de anexos */}
-              <DriveUploadForm
-                requestId={requestId}
-                uploadedBy={session?.user?.name ?? 'Desconhecido'}
-                onSuccess={() => {
-                  setLoading(true);
-                  fetch(`/api/requests/${requestId}`)
-                    .then(res => res.json())
-                    .then(data => setRequest(data))
-                    .finally(() => setLoading(false));
-                }}
-              />
-              {/* Lista de anexos */}
-              {request.attachments && request.attachments.length > 0 ? (
-                <ul className="space-y-1">
-                  {request.attachments.map((att) => (
-                    <li key={att.id} className="flex items-center gap-2">
-                      <a
-                        href={att.webViewLink || '#'}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-primary hover:underline flex items-center gap-1"
-                        aria-label={`Abrir anexo ${att.name}`}
-                      >
-                        <Paperclip className="w-4 h-4" />
-                        {att.name}
-                      </a>
-                      {/* Botão de remover, se permitido */}
-                      {/*
-                      <button
-                        type="button"
-                        className="ml-1 text-red-500 hover:text-red-700"
-                        aria-label={`Remover anexo ${att.name}`}
-                        onClick={() => setRemovingAtt(att)}
-                      >
-                        <XCircle className="w-4 h-4" />
-                      </button>
-                      */}
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <div className="text-xs text-muted-foreground">Nenhum anexo enviado.</div>
-              )}
-            </div>
-            
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-primary rounded-full" />
-                <b className="text-sm">Histórico</b>
-              </div>
-              {Array.isArray(request.statusHistory) && request.statusHistory.length > 0 ? (
-                <ol className="relative border-l border-muted-foreground/30 ml-2 space-y-4">
-                  {request.statusHistory.map((h, idx) => (
-                    <li key={idx} className="ml-4">
-                      <div className="absolute w-3 h-3 bg-primary rounded-full -left-1.5 border-2 border-white" />
-                      <div className="flex items-center gap-2">
-                        {h.status === 'attachment_added' ? (
-                          <Paperclip className="w-4 h-4 text-blue-500" />
-                        ) : h.status === 'attachment_removed' ? (
-                          <Trash2 className="w-4 h-4 text-red-500" />
-                        ) : (
-                          <StatusBadge status={h.status as 'pending' | 'approved' | 'rejected' | 'in_progress' | 'completed'} />
-                        )}
-                        <span className="text-xs text-muted-foreground">
-                          {h.status === 'attachment_added' && 'Anexo adicionado'}
-                          {h.status === 'attachment_removed' && 'Anexo removido'}
-                          {h.status !== 'attachment_added' && h.status !== 'attachment_removed' && null}
-                        </span>
-                        <span className="text-xs text-muted-foreground">{dayjs(h.changedAt).format('DD/MM/YYYY HH:mm')}</span>
-                      </div>
-                      <div className="text-xs text-muted-foreground mt-1">
-                        por <span className="font-medium text-foreground">{h.changedBy}</span>
-                        {h.comment && (
-                          <div className="mt-1 text-xs italic text-muted-foreground bg-muted/50 p-2 rounded">
-                            {h.comment}
-                          </div>
-                        )}
-                      </div>
-                    </li>
-                  ))}
-                </ol>
-              ) : (
-                <div className="text-sm text-muted-foreground italic">Nenhum histórico registrado para esta requisição.</div>
-              )}
-            </div>
-            {request && (
-              <Button
-                variant="outline"
-                className="w-full mb-2"
-                onClick={() => handleGeneratePdf(request)}
-              >
-                Gerar PDF
-              </Button>
-            )}
           </div>
         )}
-        <DialogFooter>
-          <button className="px-4 py-2 bg-muted text-foreground rounded hover:bg-muted/80 transition" onClick={() => onOpenChange(false)}>
-            Fechar
-          </button>
+        <DialogFooter className="mt-8 flex justify-end gap-4">
+          {!loading && request && <RequestDetailsActions request={request} />}
+          <DialogClose asChild>
+            <Button variant="ghost">Fechar</Button>
+          </DialogClose>
         </DialogFooter>
-        
-        {/* Dialog para comentário obrigatório ao remover anexo */}
-        <Dialog open={!!removingAtt} onOpenChange={open => { if (!open) { setRemovingAtt(null); setComment(''); } }}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Remover Anexo</DialogTitle>
-            </DialogHeader>
-            <div className="mb-2 text-sm">Descreva o motivo da remoção (obrigatório):</div>
-            <Textarea
-              placeholder="Comentário obrigatório"
-              value={comment}
-              onChange={e => setComment(e.target.value)}
-              rows={3}
-              className="mb-2"
-            />
-            <DialogFooter>
-              <button className="px-4 py-2 bg-muted text-foreground rounded hover:bg-muted/80 transition" onClick={() => { setRemovingAtt(null); setComment(''); }}>
-                Cancelar
-              </button>
-              <button className="px-4 py-2 bg-destructive text-white rounded hover:bg-destructive/90 transition" disabled={!comment.trim() || isRemoving} onClick={async () => {
-                setIsRemoving(true);
-                const filtered = (request!.attachments).filter(a => a.id !== removingAtt!.id);
-                await updateRequestAttachments({
-                  id: requestId,
-                  attachments: filtered,
-                  changedBy: session?.user?.name ?? 'Desconhecido',
-                  comment,
-                  action: 'remove',
-                }).then((data) => {
-                  if (data && data.success) toast.success(data.success, { icon: <CheckCircle2 className="text-green-500" /> });
-                  if (data && data.error) toast.error(data.error, { icon: <XCircle className="text-red-500" /> });
-                });
-                setIsRemoving(false);
-                setRemovingAtt(null);
-                setComment('');
-                // Refetch os dados após remoção
-                setLoading(true);
-                fetch(`/api/requests/${requestId}`)
-                  .then(res => res.json())
-                  .then(data => setRequest(data))
-                  .finally(() => setLoading(false));
-              }}>Confirmar Remoção</button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
       </DialogContent>
     </Dialog>
   );
