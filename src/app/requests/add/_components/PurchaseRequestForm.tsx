@@ -213,7 +213,7 @@ export function PurchaseRequestForm({ requesterName, setIsLoading }: PurchaseReq
                           <FormLabel htmlFor={`productName-${idx}`} className={form.formState.errors.products?.[idx]?.productName ? 'text-destructive' : ''}>Produto</FormLabel>
                           <div className="relative">
                             <ShoppingBag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                            <Input id={`productName-${idx}`} placeholder="Ex: Notebook Dell" {...field} className="pl-10 w-full text-base" />
+                            <Input id={`productName-${idx}`} placeholder="Ex: Books" {...field} className="pl-10 w-full text-base" />
                           </div>
                         </FormItem>
                       )}
@@ -246,6 +246,7 @@ export function PurchaseRequestForm({ requesterName, setIsLoading }: PurchaseReq
                               decimalSeparator=","
                               decimalScale={2}
                               fixedDecimalScale
+                              placeholder="0,00"
                               customInput={Input}
                               value={field.value || ''}
                               onValueChange={(values) => form.setValue(`products.${idx}.unitPrice`, values.value ?? '')}
@@ -262,7 +263,7 @@ export function PurchaseRequestForm({ requesterName, setIsLoading }: PurchaseReq
                           <FormLabel htmlFor={`supplier-${idx}`} className={form.formState.errors.products?.[idx]?.supplier ? 'text-destructive' : ''}>Fornecedor</FormLabel>
                           <div className="relative">
                             <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                            <Input id={`supplier-${idx}`} placeholder="Ex: Dell Computadores" {...field} className="pl-10 w-full text-base" />
+                            <Input id={`supplier-${idx}`} placeholder="Ex: Amazon" {...field} className="pl-10 w-full text-base" />
                           </div>
                         </FormItem>
                       )}
@@ -467,7 +468,7 @@ export function PurchaseRequestForm({ requesterName, setIsLoading }: PurchaseReq
                       ) : (
                         <Send className="h-5 w-5" />
                       )}
-                      {form.formState.isSubmitting ? 'Enviando...' : 'Criar Requisição'}
+                      {form.formState.isSubmitting ? 'Enviando...' : 'Enviar Requisição'}
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="top">Enviar requisição para aprovação</TooltipContent>
