@@ -20,6 +20,7 @@ export async function POST(req: NextRequest) {
 
   const formData = await req.formData();
   const files = formData.getAll('files');
+  const driveFolderId = formData.get('driveFolderId')?.toString();
   if (!files || files.length === 0) {
     return NextResponse.json([], { status: 200 });
   }
@@ -41,7 +42,7 @@ export async function POST(req: NextRequest) {
       const arrayBuffer = await file.arrayBuffer();
       const buffer = Buffer.from(arrayBuffer);
       // Fazer upload para o Google Drive
-      const parentId = process.env.DRIVE_ROOT_FOLDER_ID || process.env.GOOGLE_DRIVE_ROOT_FOLDER_ID;
+      const parentId = driveFolderId || process.env.DRIVE_ROOT_FOLDER_ID || process.env.GOOGLE_DRIVE_ROOT_FOLDER_ID;
       const result = await uploadFileToFolder(buffer, file.name, file.type, parentId);
       // Retornar dados relevantes para o frontend
       uploaded.push({

@@ -102,6 +102,35 @@ export const files = pgTable('files', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
 })
 
+// Tabela filha para requisições de compras
+export const purchaseRequests = pgTable('purchase_requests', {
+  id: serial('id').primaryKey(),
+  requestId: integer('request_id').notNull().references(() => requests.id),
+  productName: varchar('product_name', { length: 256 }),
+  quantity: integer('quantity'),
+  unitPrice: decimal('unit_price', { precision: 10, scale: 2 }),
+  supplier: varchar('supplier', { length: 256 }),
+  priority: requestPriorityEnum('priority'),
+});
+
+// Tabela filha para requisições de manutenção
+export const maintenanceRequests = pgTable('maintenance_requests', {
+  id: serial('id').primaryKey(),
+  requestId: integer('request_id').notNull().references(() => requests.id),
+  location: varchar('location', { length: 256 }),
+  maintenanceType: varchar('maintenance_type', { length: 256 }),
+  priority: requestPriorityEnum('priority'),
+});
+
+// Tabela filha para requisições de suporte de T.I.
+export const itSupportRequests = pgTable('it_support_requests', {
+  id: serial('id').primaryKey(),
+  requestId: integer('request_id').notNull().references(() => requests.id),
+  issueTitle: varchar('issue_title', { length: 256 }),
+  urgency: requestPriorityEnum('urgency'),
+  // Adicione outros campos específicos conforme necessário
+});
+
 // Tipos TypeScript que o Drizzle infere do nosso schema.
 // Isso nos dá autocompletar e segurança de tipos em todo o código!
 export type Request = typeof requests.$inferSelect

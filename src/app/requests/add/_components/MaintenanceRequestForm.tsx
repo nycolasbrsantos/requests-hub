@@ -96,11 +96,25 @@ export function MaintenanceRequestForm({ requesterName }: MaintenanceRequestForm
   const [attachmentsPreview, setAttachmentsPreview] = useState<File[]>([]);
 
   async function onSubmit(values: MaintenanceFormValues) {
+    // 1. Cria a requisição sem anexos
+    const result = await execute({
+      ...values,
+      title: `${values.maintenanceType} - ${values.location}`,
+      type: 'maintenance',
+      requesterName,
+      attachments: [],
+    });
+    if (!result?.data?.id || !result?.data?.driveFolderId) {
+      toast.error('Erro ao criar requisição ou obter pasta de anexos.');
+      return;
+    }
+    // 2. Se houver anexos, faz upload para a subpasta correta
     let attachments: { id: string; name: string; webViewLink?: string }[] = [];
-    if (Array.isArray(values.attachments) && values.attachments.length > 0) {
+    if (attachmentsPreview.length > 0) {
       setUploading(true);
       const formData = new FormData();
-      values.attachments.forEach((file: File) => formData.append('files', file));
+      attachmentsPreview.forEach((file: File) => formData.append('files', file));
+      formData.append('driveFolderId', result.data.driveFolderId);
       try {
         const res = await fetch('/api/upload/upload-temp', {
           method: 'POST',
@@ -122,14 +136,16 @@ export function MaintenanceRequestForm({ requesterName }: MaintenanceRequestForm
         return;
       }
       setUploading(false);
+      // 3. Atualiza os attachments da requisição
+      await fetch(`/api/requests/${result.data.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ attachments }),
+      });
     }
-    await execute({
-      ...values,
-      title: `${values.maintenanceType} - ${values.location}`,
-      type: 'maintenance',
-      requesterName,
-      attachments,
-    });
+    toast.success('Requisição criada com sucesso!');
+    form.reset();
+    setAttachmentsPreview([]);
   }
 
   return (
