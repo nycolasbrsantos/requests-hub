@@ -119,5 +119,12 @@ export async function getFileInfo(fileId: string) {
     fields: 'id,name,mimeType,size,createdTime,webViewLink,webContentLink',
   });
   return response.data;
+}
+
+export function getRootFolderIdByType(type: 'purchase' | 'it_support' | 'maintenance'): string {
+  if (type === 'purchase') return process.env.DRIVE_PURCHASES_FOLDER_ID!;
+  if (type === 'it_support') return process.env.DRIVE_SUPPORT_FOLDER_ID!;
+  if (type === 'maintenance') return process.env.DRIVE_MAINTENANCE_FOLDER_ID!;
+  throw new Error('Tipo de requisição inválido');
 } 
  

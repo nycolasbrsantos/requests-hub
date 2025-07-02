@@ -10,7 +10,7 @@ import { requests } from '@/db/schema'
 import { actionClient } from '@/lib/safe-actions'
 import { createRequestSchema } from './schema'
 import { generateRequestPdf } from '@/lib/generate-request-pdf'
-import { uploadFileToFolder } from '@/lib/google-drive'
+import { uploadFileToFolder, getRootFolderIdByType, createFolder } from '@/lib/google-drive'
 
 // Se você quiser manter o handler separado:
 const handler = async ({
@@ -50,12 +50,17 @@ const handler = async ({
     console.log('customId:', customId);
     console.log('insert object:', { ...parsedInput, customId, attachments });
 
+    // Criação da subpasta no Google Drive
+    const rootFolderId = getRootFolderIdByType(parsedInput.type as 'purchase' | 'it_support' | 'maintenance');
+    const driveFolderId = await createFolder(`REQ-${customId}`, rootFolderId);
+
     const [newRequest] = await db
       .insert(requests)
       .values({
         ...parsedInput,
         customId,
         attachments,
+        driveFolderId,
         // Garante que unitPrice seja string (Drizzle espera string para decimal)
         unitPrice: parsedInput.unitPrice ? String(parsedInput.unitPrice) : undefined,
       })
