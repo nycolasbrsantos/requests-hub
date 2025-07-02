@@ -34,9 +34,11 @@ type MaintenanceFormValues = z.infer<typeof maintenanceSchema>;
 
 interface MaintenanceRequestFormProps {
   requesterName: string;
+  isLoading: boolean;
+  setIsLoading: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-export function MaintenanceRequestForm({ requesterName }: MaintenanceRequestFormProps) {
+export function MaintenanceRequestForm({ requesterName, isLoading, setIsLoading }: MaintenanceRequestFormProps) {
   const form = useForm<MaintenanceFormValues>({
     resolver: zodResolver(maintenanceSchema),
     defaultValues: {
@@ -68,6 +70,7 @@ export function MaintenanceRequestForm({ requesterName }: MaintenanceRequestForm
         toast.success('Requisição criada com sucesso!');
         form.reset();
       }
+      setIsLoading(false);
     },
     onError: (error) => {
       const validation = error?.error?.validationErrors;
@@ -87,6 +90,7 @@ export function MaintenanceRequestForm({ requesterName }: MaintenanceRequestForm
         msg = JSON.stringify(error);
       }
       toast.error('Erro ao criar requisição: ' + msg);
+      setIsLoading(false);
     },
   });
 
@@ -130,6 +134,7 @@ export function MaintenanceRequestForm({ requesterName }: MaintenanceRequestForm
   }, [form.formState.isSubmitting]);
 
   async function onSubmit(values: MaintenanceFormValues) {
+    setIsLoading(true);
     await execute({
       ...values,
       title: `${values.maintenanceType} - ${values.location}`,
@@ -273,11 +278,6 @@ export function MaintenanceRequestForm({ requesterName }: MaintenanceRequestForm
           </Form>
         </CardContent>
       </Card>
-      {form.formState.isSubmitting && (
-        <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/40 rounded-xl">
-          <Loader2 className="h-12 w-12 animate-spin text-white" />
-        </div>
-      )}
     </div>
   );
 } 

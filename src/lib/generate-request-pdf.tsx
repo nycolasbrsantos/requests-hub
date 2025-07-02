@@ -63,28 +63,31 @@ export async function generateRequestPdf(request: {
           <Text style={styles.statusFinal}>Status Atual: <Text>{request.status}</Text></Text>
           <View style={styles.section}>
             <View style={styles.row}>
-              <Text style={styles.label}>Nº:</Text>
-              <Text>{' '}{request.customId}{' '}</Text>
-              <Text style={styles.label}>Data:</Text>
-              <Text>{' '}{new Date(request.createdAt).toLocaleString('pt-BR')}{' '}</Text>
+              <Text>
+                <Text style={styles.label}>Nº:</Text>{' '}{request.customId}{' '}
+                <Text style={styles.label}>Data:</Text>{' '}{new Date(request.createdAt).toLocaleString('pt-BR')}{' '}
+              </Text>
             </View>
             <View style={styles.row}>
-              <Text style={styles.label}>Solicitante:</Text>
-              <Text>{' '}{request.requesterName}{' '}</Text>
-              <Text style={styles.label}>Status:</Text>
-              <Text>{' '}{request.status}{' '}</Text>
+              <Text>
+                <Text style={styles.label}>Solicitante:</Text>{' '}{request.requesterName}{' '}
+                <Text style={styles.label}>Status:</Text>{' '}{request.status}{' '}
+              </Text>
             </View>
           </View>
           <View style={styles.section}>
-            <Text style={styles.label}>Produto:</Text> <Text>{' '}{request.productName || '-'}{' '}</Text>
-            <Text style={styles.label}>Quantidade:</Text> <Text>{' '}{request.quantity || '-'}{' '}</Text>
-            <Text style={styles.label}>Preço Unitário:</Text> <Text>{' '}{request.unitPrice || '-'}{' '}</Text>
-            <Text style={styles.label}>Fornecedor:</Text> <Text>{' '}{request.supplier || '-'}{' '}</Text>
-            <Text style={styles.label}>Prioridade:</Text> <Text>{' '}{request.priority || '-'}{' '}</Text>
+            <Text>
+              <Text style={styles.label}>Produto:</Text>{' '}{request.productName || '-'}{' '}
+              <Text style={styles.label}>Quantidade:</Text>{' '}{request.quantity || '-'}{' '}
+              <Text style={styles.label}>Preço Unitário:</Text>{' '}{request.unitPrice || '-'}{' '}
+              <Text style={styles.label}>Fornecedor:</Text>{' '}{request.supplier || '-'}{' '}
+              <Text style={styles.label}>Prioridade:</Text>{' '}{request.priority || '-'}{' '}
+            </Text>
           </View>
           <View style={styles.section}>
-            <Text style={styles.label}>Descrição:</Text>
-            <Text>{' '}{request.description || '-'}{' '}</Text>
+            <Text>
+              <Text style={styles.label}>Descrição:</Text>{' '}{request.description || '-'}{' '}
+            </Text>
           </View>
           {/* Lista de anexos em tabela */}
           {request.attachments && request.attachments.length > 0 && (
@@ -112,7 +115,9 @@ export async function generateRequestPdf(request: {
                 <View key={idx} style={styles.timelineBlock}>
                   <Text style={styles.timelineStatus}>{h.status}</Text>
                   <Text style={styles.timelineDate}>{new Date(h.changedAt).toLocaleString('pt-BR')}</Text>
-                  <Text><Text style={styles.label}>Por:</Text>{' '}{h.changedBy}</Text>
+                  <Text>
+                    <Text style={styles.label}>Por:</Text>{' '}{h.changedBy}
+                  </Text>
                   {h.comment && (
                     <Text style={styles.timelineComment}>{h.comment}</Text>
                   )}

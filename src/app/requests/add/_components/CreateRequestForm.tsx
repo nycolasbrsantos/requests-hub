@@ -16,9 +16,11 @@ type RequestType = typeof REQUEST_TYPES[number]['value'];
 
 interface CreateRequestFormProps {
   requesterName: string;
+  isLoading: boolean;
+  setIsLoading: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-export function CreateRequestForm({ requesterName }: CreateRequestFormProps) {
+export function CreateRequestForm({ requesterName, isLoading, setIsLoading }: CreateRequestFormProps) {
   const params = useSearchParams();
   const tp = params.get('type') as RequestType | null;
   const requestType: RequestType | null = tp && REQUEST_TYPES.some(t => t.value === tp) ? tp : null;
@@ -31,14 +33,25 @@ export function CreateRequestForm({ requesterName }: CreateRequestFormProps) {
     );
   }
 
-  if (requestType === 'purchase') {
-    return <PurchaseRequestForm requesterName={requesterName} />;
-  }
-  if (requestType === 'it_support') {
-    return <ItSupportRequestForm />;
-  }
-  if (requestType === 'maintenance') {
-    return <MaintenanceRequestForm requesterName={requesterName} />;
-  }
-  return null;
+  return (
+    <div className="relative">
+      {requestType === 'purchase' && (
+        <PurchaseRequestForm requesterName={requesterName} isLoading={isLoading} setIsLoading={setIsLoading} />
+      )}
+      {requestType === 'it_support' && (
+        <ItSupportRequestForm />
+      )}
+      {requestType === 'maintenance' && (
+        <MaintenanceRequestForm requesterName={requesterName} isLoading={isLoading} setIsLoading={setIsLoading} />
+      )}
+      {isLoading && (
+        <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/40 rounded-xl">
+          <svg className="animate-spin h-12 w-12 text-white" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+          </svg>
+        </div>
+      )}
+    </div>
+  );
 }

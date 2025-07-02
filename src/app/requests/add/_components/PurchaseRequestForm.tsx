@@ -37,9 +37,10 @@ type PurchaseFormValues = z.infer<typeof purchaseSchema>;
 
 interface PurchaseRequestFormProps {
   requesterName: string;
+  setIsLoading: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-export function PurchaseRequestForm({ requesterName }: PurchaseRequestFormProps) {
+export function PurchaseRequestForm({ requesterName, setIsLoading }: PurchaseRequestFormProps) {
   const form = useForm<PurchaseFormValues>({
     resolver: zodResolver(purchaseSchema),
     defaultValues: {
@@ -75,6 +76,7 @@ export function PurchaseRequestForm({ requesterName }: PurchaseRequestFormProps)
         form.reset();
         setAttachmentsPreview([]);
       }
+      setIsLoading(false);
     },
     onError: (error) => {
       const validation = error?.error?.validationErrors;
@@ -94,6 +96,7 @@ export function PurchaseRequestForm({ requesterName }: PurchaseRequestFormProps)
         msg = JSON.stringify(error);
       }
       toast.error('Erro ao criar requisição: ' + msg);
+      setIsLoading(false);
     },
   });
 
@@ -136,6 +139,7 @@ export function PurchaseRequestForm({ requesterName }: PurchaseRequestFormProps)
   }, [form.formState.isSubmitting]);
 
   async function onSubmit(values: PurchaseFormValues) {
+    setIsLoading(true);
     await execute({
       ...values,
       title: values.productName,
@@ -311,11 +315,6 @@ export function PurchaseRequestForm({ requesterName }: PurchaseRequestFormProps)
           </Form>
         </CardContent>
       </Card>
-      {form.formState.isSubmitting && (
-        <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/40 rounded-xl">
-          <Loader2 className="h-12 w-12 animate-spin text-white" />
-        </div>
-      )}
     </div>
   );
 } 
