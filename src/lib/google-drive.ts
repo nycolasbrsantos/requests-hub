@@ -69,17 +69,26 @@ export async function uploadFileToFolder(
   parentId?: string
 ) {
   const drive = await getDriveClient();
-  if (parentId) {
-    const parentExists = await folderExists(parentId);
-    if (!parentExists) {
-      throw new Error(`Pasta pai com ID ${parentId} não encontrada ou inacessível. Verifique se a conta de serviço tem permissão para acessar esta pasta.`);
+  let parentExists = false;
+  let attempts = 0;
+  while (attempts < 3) {
+    if (parentId) {
+      parentExists = await folderExists(parentId);
+      if (parentExists) break;
+      console.warn(`[Google Drive] Pasta pai '${parentId}' não encontrada. Tentando novamente (${attempts + 1}/3)...`);
+      await new Promise(res => setTimeout(res, 1000));
+    } else {
+      parentExists = true;
+      break;
     }
+    attempts++;
+  }
+  if (parentId && !parentExists) {
+    throw new Error(`Pasta pai com ID ${parentId} não encontrada ou inacessível após 3 tentativas. Verifique se a conta de serviço tem permissão para acessar esta pasta.`);
   }
   const requestBody: Record<string, unknown> = {
     name: fileName,
     parents: parentId ? [parentId] : undefined,
-    // Se quiser, pode adicionar driveId aqui se souber o ID da unidade compartilhada
-    // driveId: 'ID_DA_SHARED_DRIVE',
   };
   const media = {
     mimeType,
@@ -89,7 +98,7 @@ export async function uploadFileToFolder(
     requestBody,
     media,
     fields: 'id,name,webViewLink,webContentLink',
-    supportsAllDrives: true, // ESSENCIAL para Shared Drives
+    supportsAllDrives: true,
   });
   return res.data;
 }
@@ -122,14 +131,15 @@ export async function getFileInfo(fileId: string) {
 }
 
 export function getRootFolderIdByType(type: 'purchase' | 'it_support' | 'maintenance'): string {
-  if (type === 'purchase') return process.env.DRIVE_PURCHASES_FOLDER_ID!;
-  if (type === 'it_support') return process.env.DRIVE_SUPPORT_FOLDER_ID!;
-  if (type === 'maintenance') return process.env.DRIVE_MAINTENANCE_FOLDER_ID!;
-  // Se nenhuma das opções, usar a raiz do Drive se GOOGLE_DRIVE_ROOT_FOLDER_ID estiver definida
-  if (process.env.GOOGLE_DRIVE_ROOT_FOLDER_ID) {
-    if (process.env.GOOGLE_DRIVE_ROOT_FOLDER_ID === 'root') return 'root';
-    return process.env.GOOGLE_DRIVE_ROOT_FOLDER_ID;
+  let folderId: string | undefined;
+  if (type === 'purchase') folderId = process.env.DRIVE_PURCHASES_FOLDER_ID;
+  else if (type === 'it_support') folderId = process.env.DRIVE_SUPPORT_FOLDER_ID;
+  else if (type === 'maintenance') folderId = process.env.DRIVE_MAINTENANCE_FOLDER_ID;
+  else if (process.env.GOOGLE_DRIVE_ROOT_FOLDER_ID) {
+    folderId = process.env.GOOGLE_DRIVE_ROOT_FOLDER_ID;
   }
-  throw new Error('Tipo de requisição inválido ou pasta raiz não definida');
+  if (!folderId) throw new Error('Tipo de requisição inválido ou pasta raiz não definida');
+  console.log(`[Google Drive] Usando pasta raiz para tipo '${type}':`, folderId);
+  return folderId === 'root' ? 'root' : folderId;
 } 
  
