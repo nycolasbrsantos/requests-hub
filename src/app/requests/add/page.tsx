@@ -15,7 +15,7 @@ export default function AddRequestPage() {
   const router = useRouter();
   return (
     <PageContainer className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100">
-      <Card className="shadow-2xl w-full max-w-3xl my-12 rounded-2xl border border-primary/20 bg-white/90 transition-all">
+      <Card className="shadow-2xl w-full max-w-3xl my-12 rounded-2xl border border-primary/20 bg-white/90 transition-all px-2 sm:px-0">
         <CardHeader className="pb-2 flex flex-col items-center gap-2">
           <Button
             variant="outline"
@@ -41,13 +41,15 @@ export default function AddRequestPage() {
         </CardContent>
       </Card>
       {isLoading && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-blue-200/60 via-white/80 to-blue-400/60 backdrop-blur-sm">
           <div className="flex flex-col items-center">
-            <svg className="animate-spin h-16 w-16 text-white" viewBox="0 0 24 24">
+            <svg className="animate-spin h-20 w-20 text-primary drop-shadow-xl" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
             </svg>
-            <span className="text-white mt-4 text-lg font-medium">Enviando requisição...</span>
+            <span className="text-primary mt-6 text-xl font-semibold animate-pulse select-none">
+              Enviando requisição<span className="inline-block animate-bounce">...</span>
+            </span>
           </div>
         </div>
       )}
