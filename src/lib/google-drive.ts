@@ -72,10 +72,10 @@ export async function uploadFileToFolder(
   }
   const requestBody: Record<string, unknown> = {
     name: fileName,
+    parents: parentId ? [parentId] : undefined,
+    // Se quiser, pode adicionar driveId aqui se souber o ID da unidade compartilhada
+    // driveId: 'ID_DA_SHARED_DRIVE',
   };
-  if (parentId) {
-    requestBody.parents = [parentId];
-  }
   const media = {
     mimeType,
     body: Readable.from(fileBuffer),
@@ -84,6 +84,7 @@ export async function uploadFileToFolder(
     requestBody,
     media,
     fields: 'id,name,webViewLink,webContentLink',
+    supportsAllDrives: true, // ESSENCIAL para Shared Drives
   });
   return res.data;
 }

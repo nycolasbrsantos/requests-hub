@@ -41,7 +41,8 @@ export async function POST(req: NextRequest) {
       const arrayBuffer = await file.arrayBuffer();
       const buffer = Buffer.from(arrayBuffer);
       // Fazer upload para o Google Drive
-      const result = await uploadFileToFolder(buffer, file.name, file.type);
+      const parentId = process.env.DRIVE_ROOT_FOLDER_ID || process.env.GOOGLE_DRIVE_ROOT_FOLDER_ID;
+      const result = await uploadFileToFolder(buffer, file.name, file.type, parentId);
       // Retornar dados relevantes para o frontend
       uploaded.push({
         id: result.id ?? undefined,
