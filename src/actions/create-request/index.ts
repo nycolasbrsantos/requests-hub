@@ -3,11 +3,14 @@
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { and, gte, lte } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 
 import { db } from '@/db'
 import { requests } from '@/db/schema'
 import { actionClient } from '@/lib/safe-actions'
 import { createRequestSchema } from './schema'
+import { generateRequestPdf } from '@/lib/generate-request-pdf'
+import { uploadFileToFolder } from '@/lib/google-drive'
 
 // Se você quiser manter o handler separado:
 const handler = async ({
@@ -33,8 +36,13 @@ const handler = async ({
     const seq = String(requestsToday.length + 1).padStart(3, '0');
     const customId = `${dateStr}-${seq}`;
 
+    // Corrigir attachments para o formato correto
     const attachments = Array.isArray(parsedInput.attachments)
-      ? parsedInput.attachments.map((filename) => ({ filename, uploadedBy: parsedInput.requesterName }))
+      ? parsedInput.attachments.map((att) =>
+          typeof att === 'string'
+            ? { id: att, name: att }
+            : { id: att.id, name: att.name, webViewLink: att.webViewLink }
+        )
       : [];
 
     // LOGS DE DEPURAÇÃO
@@ -52,6 +60,45 @@ const handler = async ({
         unitPrice: parsedInput.unitPrice ? String(parsedInput.unitPrice) : undefined,
       })
       .returning();
+
+    // Geração e upload do PDF detalhado da requisição
+    if (newRequest) {
+      const pdfBuffer = await generateRequestPdf({
+        customId: newRequest.customId ?? '',
+        createdAt: newRequest.createdAt?.toISOString?.() ?? (typeof newRequest.createdAt === 'string' ? newRequest.createdAt : ''),
+        requesterName: newRequest.requesterName ?? '',
+        status: newRequest.status ?? '',
+        productName: newRequest.productName ?? undefined,
+        quantity: newRequest.quantity ?? undefined,
+        unitPrice: newRequest.unitPrice ? String(newRequest.unitPrice) : undefined,
+        supplier: newRequest.supplier ?? undefined,
+        priority: newRequest.priority ?? undefined,
+        description: newRequest.description ?? undefined,
+      });
+      // Nome do arquivo PDF
+      const pdfFileName = `Requisicao-${newRequest.customId}.pdf`;
+      // Upload para a pasta da requisição
+      if (newRequest.driveFolderId) {
+        const pdfFile = await uploadFileToFolder(
+          Buffer.from(pdfBuffer),
+          pdfFileName,
+          'application/pdf',
+          newRequest.driveFolderId
+        );
+        // Atualiza os attachments para incluir o PDF
+        const updatedAttachments = [
+          ...((Array.isArray(newRequest.attachments) ? newRequest.attachments : []).map(att => ({
+            id: att.id ?? '',
+            name: att.name ?? '',
+            webViewLink: att.webViewLink ?? undefined,
+          }))),
+          { id: pdfFile.id ?? '', name: pdfFile.name ?? '', webViewLink: pdfFile.webViewLink ?? undefined },
+        ];
+        await db.update(requests)
+          .set({ attachments: updatedAttachments })
+          .where(eq(requests.id, newRequest.id));
+      }
+    }
 
     revalidatePath('/requests');
 

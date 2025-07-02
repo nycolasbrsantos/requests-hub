@@ -6,6 +6,8 @@ import { requests } from '@/db/schema'
 import { actionClient } from '@/lib/safe-actions'
 import { eq } from 'drizzle-orm'
 import { updateRequestStatusSchema } from './schema'
+import { generateRequestPdf } from '@/lib/generate-request-pdf'
+import { uploadFileToFolder } from '@/lib/google-drive'
 
 const handler = async ({ parsedInput }: { parsedInput: { id: number; status: 'pending' | 'approved' | 'rejected' | 'in_progress' | 'completed'; changedBy?: string; comment: string } }) => {
   try {
@@ -29,6 +31,45 @@ const handler = async ({ parsedInput }: { parsedInput: { id: number; status: 'pe
 
     if (!updatedRequest) {
       return { error: 'Requisição não encontrada.' }
+    }
+
+    // Geração e upload do PDF ao concluir
+    if (status === 'completed') {
+      // Buscar dados atualizados da requisição
+      const [requestAfterUpdate] = await db.select().from(requests).where(eq(requests.id, id));
+      if (requestAfterUpdate && requestAfterUpdate.driveFolderId) {
+        const pdfBuffer = await generateRequestPdf({
+          customId: requestAfterUpdate.customId ?? '',
+          createdAt: requestAfterUpdate.createdAt?.toISOString?.() ?? (typeof requestAfterUpdate.createdAt === 'string' ? requestAfterUpdate.createdAt : ''),
+          requesterName: requestAfterUpdate.requesterName ?? '',
+          status: requestAfterUpdate.status ?? '',
+          productName: requestAfterUpdate.productName ?? undefined,
+          quantity: requestAfterUpdate.quantity ?? undefined,
+          unitPrice: requestAfterUpdate.unitPrice ? String(requestAfterUpdate.unitPrice) : undefined,
+          supplier: requestAfterUpdate.supplier ?? undefined,
+          priority: requestAfterUpdate.priority ?? undefined,
+          description: requestAfterUpdate.description ?? undefined,
+        });
+        const pdfFileName = `Requisicao-${requestAfterUpdate.customId}-concluida.pdf`;
+        const pdfFile = await uploadFileToFolder(
+          Buffer.isBuffer(pdfBuffer) ? pdfBuffer : Buffer.from(pdfBuffer),
+          pdfFileName,
+          'application/pdf',
+          requestAfterUpdate.driveFolderId
+        );
+        // Atualiza os attachments para incluir o novo PDF
+        const updatedAttachments = [
+          ...((Array.isArray(requestAfterUpdate.attachments) ? requestAfterUpdate.attachments : []).map(att => ({
+            id: att.id ?? '',
+            name: att.name ?? '',
+            webViewLink: att.webViewLink ?? undefined,
+          }))),
+          { id: pdfFile.id ?? '', name: pdfFile.name ?? '', webViewLink: pdfFile.webViewLink ?? undefined },
+        ];
+        await db.update(requests)
+          .set({ attachments: updatedAttachments })
+          .where(eq(requests.id, id));
+      }
     }
 
     revalidatePath('/requests')

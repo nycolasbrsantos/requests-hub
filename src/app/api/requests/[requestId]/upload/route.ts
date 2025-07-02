@@ -23,7 +23,7 @@ async function getOrCreateRequestFolder(requestId: number): Promise<string> {
   const rootFolderId = await getValidRootFolderId();
   const folderName = `Requisicao-${requestId}`;
   try {
-    const drive = getDriveClient();
+    const drive = await getDriveClient();
     const response = await drive.files.list({
       q: `name='${folderName}' and '${rootFolderId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`,
       fields: 'files(id,name)',

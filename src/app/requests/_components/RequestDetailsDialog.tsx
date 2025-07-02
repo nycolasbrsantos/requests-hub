@@ -10,6 +10,8 @@ import { useSession } from 'next-auth/react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DriveUploadForm } from './DriveUploadForm';
+import { Button } from '@/components/ui/button';
+import { saveAs } from 'file-saver';
 
 interface Attachment {
   id: string;
@@ -54,6 +56,17 @@ const statusOptions = [
   { value: 'in_progress', label: 'Em andamento' },
   { value: 'completed', label: 'Concluída' },
 ];
+
+// Função utilitária para gerar PDF no client
+async function handleGeneratePdf(request: RequestDetails) {
+  const res = await fetch(`/api/requests/${request.id}/generate-pdf`);
+  if (!res.ok) {
+    alert('Erro ao gerar PDF');
+    return;
+  }
+  const blob = await res.blob();
+  saveAs(blob, `Requisicao-${request.customId || request.id}.pdf`);
+}
 
 export default function RequestDetailsDialog({ requestId, open, onOpenChange }: RequestDetailsDialogProps) {
   const { data: session } = useSession();
@@ -256,6 +269,15 @@ export default function RequestDetailsDialog({ requestId, open, onOpenChange }: 
                 <div className="text-sm text-muted-foreground italic">Nenhum histórico registrado para esta requisição.</div>
               )}
             </div>
+            {request && (
+              <Button
+                variant="outline"
+                className="w-full mb-2"
+                onClick={() => handleGeneratePdf(request)}
+              >
+                Gerar PDF
+              </Button>
+            )}
           </div>
         )}
         <DialogFooter>

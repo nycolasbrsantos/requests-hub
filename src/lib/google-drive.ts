@@ -1,16 +1,21 @@
 import { google } from 'googleapis';
 import path from 'path';
 import { Readable } from 'stream';
+import { JWT } from 'google-auth-library';
+import fs from 'fs';
 
-const SCOPES = ['https://www.googleapis.com/auth/drive.file'];
+const SCOPES = ['https://www.googleapis.com/auth/drive'];
 const KEYFILE = process.env.GOOGLE_SERVICE_ACCOUNT_KEYFILE || 'google-service-account.json';
 
 // Função para obter cliente do Google Drive (se não existir)
-export function getDriveClient() {
+export async function getDriveClient() {
   const keyFilePath = path.join(process.cwd(), KEYFILE);
-  const auth = new google.auth.GoogleAuth({
-    keyFile: keyFilePath,
+  const serviceAccount = JSON.parse(fs.readFileSync(keyFilePath, 'utf-8'));
+  const auth = new JWT({
+    email: serviceAccount.client_email,
+    key: serviceAccount.private_key,
     scopes: SCOPES,
+    subject: 'nsantos@biseagles.com', // delegação domain-wide
   });
   return google.drive({ version: 'v3', auth });
 }
@@ -18,7 +23,7 @@ export function getDriveClient() {
 // Função para verificar se uma pasta existe
 export async function folderExists(folderId: string): Promise<boolean> {
   try {
-    const drive = getDriveClient();
+    const drive = await getDriveClient();
     const response = await drive.files.get({
       fileId: folderId,
       fields: 'id,name,mimeType',
@@ -32,7 +37,7 @@ export async function folderExists(folderId: string): Promise<boolean> {
 
 // Função para criar pasta (melhorada)
 export async function createFolder(name: string, parentId?: string): Promise<string> {
-  const drive = getDriveClient();
+  const drive = await getDriveClient();
   if (parentId) {
     const parentExists = await folderExists(parentId);
     if (!parentExists) {
@@ -63,7 +68,7 @@ export async function uploadFileToFolder(
   mimeType: string,
   parentId?: string
 ) {
-  const drive = getDriveClient();
+  const drive = await getDriveClient();
   if (parentId) {
     const parentExists = await folderExists(parentId);
     if (!parentExists) {
@@ -91,7 +96,7 @@ export async function uploadFileToFolder(
 
 // Função para listar arquivos em uma pasta
 export async function listFilesInFolder(folderId: string) {
-  const drive = getDriveClient();
+  const drive = await getDriveClient();
   const response = await drive.files.list({
     q: `parents in '${folderId}' and trashed=false`,
     fields: 'files(id,name,mimeType,size,createdTime,webViewLink)',
@@ -102,13 +107,13 @@ export async function listFilesInFolder(folderId: string) {
 
 // Função para deletar arquivo
 export async function deleteFile(fileId: string) {
-  const drive = getDriveClient();
+  const drive = await getDriveClient();
   await drive.files.delete({ fileId });
 }
 
 // Função para obter informações de um arquivo
 export async function getFileInfo(fileId: string) {
-  const drive = getDriveClient();
+  const drive = await getDriveClient();
   const response = await drive.files.get({
     fileId,
     fields: 'id,name,mimeType,size,createdTime,webViewLink,webContentLink',

@@ -76,6 +76,7 @@ export const requests = pgTable('requests', {
     changedBy: string;
     comment?: string;
   }[]>().default([]),
+  driveFolderId: varchar('drive_folder_id', { length: 128 }),
 })
 
 // Tabela de usuários
