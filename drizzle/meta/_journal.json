@@ -43,6 +43,13 @@
       "when": 1751371837517,
       "tag": "0005_short_rattler",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1751473202140,
+      "tag": "0006_zippy_tempest",
+      "breakpoints": true
     }
   ]
 }
