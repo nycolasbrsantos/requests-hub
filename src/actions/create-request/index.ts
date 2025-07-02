@@ -6,7 +6,7 @@ import { and, gte, lte } from 'drizzle-orm'
 import { eq } from 'drizzle-orm'
 
 import { db } from '@/db'
-import { requests } from '@/db/schema'
+import { requests, purchaseRequests, maintenanceRequests, itSupportRequests } from '@/db/schema'
 import { actionClient } from '@/lib/safe-actions'
 import { createRequestSchema } from './schema'
 import { generateRequestPdf } from '@/lib/generate-request-pdf'
@@ -65,6 +65,31 @@ const handler = async ({
         unitPrice: parsedInput.unitPrice ? String(parsedInput.unitPrice) : undefined,
       })
       .returning();
+
+    // Inserir na tabela filha conforme o tipo
+    if (newRequest) {
+      if (newRequest.type === 'purchase') {
+        await db.insert(purchaseRequests).values({
+          requestId: newRequest.id,
+          productName: parsedInput.productName,
+          quantity: parsedInput.quantity,
+          unitPrice: parsedInput.unitPrice,
+          supplier: parsedInput.supplier,
+          priority: parsedInput.priority,
+        });
+      } else if (newRequest.type === 'maintenance') {
+        await db.insert(maintenanceRequests).values({
+          requestId: newRequest.id,
+          location: parsedInput.location,
+          priority: parsedInput.priority,
+        });
+      } else if (["it_support", "it_ticket"].includes(newRequest.type as string)) {
+        await db.insert(itSupportRequests).values({
+          requestId: newRequest.id,
+          // category é o único campo extra do schema para it_support/it_ticket
+        });
+      }
+    }
 
     // Geração e upload do PDF detalhado da requisição
     if (newRequest) {
