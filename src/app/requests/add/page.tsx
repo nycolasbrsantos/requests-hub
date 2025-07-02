@@ -2,7 +2,7 @@
 import React, { useState } from 'react'
 import { PageContainer } from '@/components/ui/page-container'
 import { CreateRequestForm } from './_components/CreateRequestForm'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, ShoppingCart } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useSession } from 'next-auth/react'
@@ -14,12 +14,12 @@ export default function AddRequestPage() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   return (
-    <PageContainer className="flex items-center justify-center min-h-screen bg-muted">
-      <Card className="shadow-lg w-full max-w-3xl my-8 relative">
-        <CardHeader>
+    <PageContainer className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100">
+      <Card className="shadow-2xl w-full max-w-3xl my-12 rounded-2xl border border-primary/20 bg-white/90 transition-all">
+        <CardHeader className="pb-2 flex flex-col items-center gap-2">
           <Button
             variant="outline"
-            className="mb-4 flex items-center gap-2"
+            className="mb-2 self-start flex items-center gap-2"
             disabled={isLoading}
             onClick={() => {
               if (!isLoading) router.push('/home');
@@ -30,9 +30,13 @@ export default function AddRequestPage() {
             <ArrowLeft className="w-4 h-4" />
             Voltar para Home
           </Button>
-          <CardTitle className="text-2xl font-bold">Nova Requisição de Compras</CardTitle>
+          <div className="flex items-center gap-3 mt-2">
+            <ShoppingCart className="w-8 h-8 text-primary" />
+            <CardTitle className="text-3xl font-extrabold text-primary tracking-tight">Nova Requisição de Compras</CardTitle>
+          </div>
+          <p className="text-muted-foreground text-base mt-1 mb-2 text-center max-w-xl">Preencha os campos abaixo para solicitar uma nova compra. Seja detalhista para agilizar o atendimento.</p>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-0 pb-8 px-6 sm:px-10">
           <CreateRequestForm requesterName={userName} isLoading={isLoading} setIsLoading={setIsLoading} />
         </CardContent>
       </Card>

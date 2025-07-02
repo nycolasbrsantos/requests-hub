@@ -6,7 +6,7 @@ import { NumericFormat } from 'react-number-format';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useState, useEffect, useRef } from 'react';
-import { Loader2 } from 'lucide-react';
+import { Loader2, ShoppingBag, Hash, DollarSign, Building2, Flag, UploadCloud, Send } from 'lucide-react';
 import { createRequest } from '@/actions/create-request';
 import {
   Form,
@@ -20,6 +20,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const MAX_FILES = 5;
 
@@ -153,22 +154,28 @@ export function PurchaseRequestForm({ requesterName, setIsLoading }: PurchaseReq
 
   return (
     <div className="relative">
-      <Card className="max-w-xl mx-auto shadow-lg border-primary/20">
-        <CardHeader>
-          <CardTitle>Nova Requisição de Compras</CardTitle>
-          <CardDescription>Preencha os campos abaixo para solicitar uma nova compra.</CardDescription>
+      <Card className="max-w-xl mx-auto shadow-lg border-primary/20 rounded-2xl">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-2xl font-bold text-primary flex items-center gap-2">
+            <ShoppingBag className="w-6 h-6 text-primary" /> Nova Requisição de Compras
+          </CardTitle>
+          <CardDescription className="text-muted-foreground mt-1">Preencha os campos abaixo para solicitar uma nova compra.</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-0 pb-8 px-4 sm:px-8">
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+              {/* Agrupamento Produto/Quantidade/Preço */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <FormField
                   control={form.control}
                   name="productName"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel htmlFor="productName">Produto</FormLabel>
-                      <Input id="productName" placeholder="Ex: Notebook Dell" {...field} />
+                      <div className="relative">
+                        <ShoppingBag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Input id="productName" placeholder="Ex: Notebook Dell" {...field} className="pl-10" />
+                      </div>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -178,8 +185,11 @@ export function PurchaseRequestForm({ requesterName, setIsLoading }: PurchaseReq
                   name="quantity"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel htmlFor="quantity">Quantidade</FormLabel>
-                      <Input id="quantity" type="number" min={1} placeholder="0" {...field} />
+                      <FormLabel htmlFor="quantity">Qtd.</FormLabel>
+                      <div className="relative">
+                        <Hash className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Input id="quantity" type="number" min={1} placeholder="0" {...field} className="pl-10" />
+                      </div>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -190,28 +200,37 @@ export function PurchaseRequestForm({ requesterName, setIsLoading }: PurchaseReq
                   render={() => (
                     <FormItem>
                       <FormLabel htmlFor="unitPrice">Preço Unitário</FormLabel>
-                      <NumericFormat
-                        id="unitPrice"
-                        className="input"
-                        thousandSeparator
-                        prefix="R$ "
-                        decimalScale={2}
-                        fixedDecimalScale
-                        customInput={Input}
-                        value={form.getValues('unitPrice')}
-                        onValueChange={(values) => form.setValue('unitPrice', values.value)}
-                      />
+                      <div className="relative">
+                        <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <NumericFormat
+                          id="unitPrice"
+                          className="pl-10 input"
+                          thousandSeparator
+                          prefix="R$ "
+                          decimalScale={2}
+                          fixedDecimalScale
+                          customInput={Input}
+                          value={form.getValues('unitPrice')}
+                          onValueChange={(values) => form.setValue('unitPrice', values.value)}
+                        />
+                      </div>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
+              </div>
+              {/* Fornecedor e Prioridade */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
                   name="supplier"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel htmlFor="supplier">Fornecedor</FormLabel>
-                      <Input id="supplier" placeholder="Ex: Dell Computadores" {...field} />
+                      <div className="relative">
+                        <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Input id="supplier" placeholder="Ex: Dell Computadores" {...field} className="pl-10" />
+                      </div>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -222,21 +241,25 @@ export function PurchaseRequestForm({ requesterName, setIsLoading }: PurchaseReq
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel htmlFor="priority">Prioridade</FormLabel>
-                      <Select value={field.value} onValueChange={field.onChange}>
-                        <SelectTrigger id="priority">
-                          <SelectValue placeholder="Selecione" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="low">Baixa</SelectItem>
-                          <SelectItem value="medium">Média</SelectItem>
-                          <SelectItem value="high">Alta</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <div className="relative">
+                        <Flag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Select value={field.value} onValueChange={field.onChange}>
+                          <SelectTrigger id="priority" className="pl-10">
+                            <SelectValue placeholder="Selecione" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="low">Baixa</SelectItem>
+                            <SelectItem value="medium">Média</SelectItem>
+                            <SelectItem value="high">Alta</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
               </div>
+              {/* Descrição */}
               <FormField
                 control={form.control}
                 name="description"
@@ -248,21 +271,31 @@ export function PurchaseRequestForm({ requesterName, setIsLoading }: PurchaseReq
                   </FormItem>
                 )}
               />
+              {/* Anexos com dropzone visual */}
               <FormField
                 control={form.control}
                 name="attachments"
-                render={({ field }) => (
+                render={() => (
                   <FormItem>
                     <FormLabel htmlFor="attachments">Anexos</FormLabel>
-                    <Input
-                      id="attachments"
-                      type="file"
-                      multiple
-                      accept="application/pdf,image/jpeg"
-                      disabled={form.formState.isSubmitting}
-                      onChange={e => {
-                        const files = Array.from(e.target.files || []);
-                        if (files.length > 5) {
+                    <div
+                      className={`
+                        relative flex flex-col items-center justify-center gap-2 border-2 border-dashed rounded-xl py-6 px-4 transition-colors
+                        ${form.formState.isSubmitting ? 'bg-muted/60 cursor-not-allowed' : 'bg-muted/40 hover:bg-blue-50 hover:border-primary/60 cursor-pointer'}
+                      `}
+                      onDragOver={e => {
+                        e.preventDefault();
+                        if (!form.formState.isSubmitting) e.currentTarget.classList.add('border-primary');
+                      }}
+                      onDragLeave={e => {
+                        e.preventDefault();
+                        e.currentTarget.classList.remove('border-primary');
+                      }}
+                      onDrop={e => {
+                        e.preventDefault();
+                        if (form.formState.isSubmitting) return;
+                        const files = Array.from(e.dataTransfer.files || []);
+                        if (files.length + attachmentsPreview.length > 5) {
                           toast.error('Você pode anexar no máximo 5 arquivos.');
                           return;
                         }
@@ -276,16 +309,48 @@ export function PurchaseRequestForm({ requesterName, setIsLoading }: PurchaseReq
                             return;
                           }
                         }
-                        field.onChange(files);
-                        setAttachmentsPreview(files);
+                        const newFiles = [...attachmentsPreview, ...files].slice(0, 5);
+                        setAttachmentsPreview(newFiles);
+                        form.setValue('attachments', newFiles);
                       }}
-                    />
-                    <FormMessage />
+                    >
+                      <UploadCloud className="w-10 h-10 text-primary mb-2" />
+                      <span className="text-sm text-muted-foreground text-center">Arraste e solte arquivos PDF/JPEG aqui ou clique para selecionar (máx. 5 arquivos, até 5MB cada)</span>
+                      <Input
+                        id="attachments"
+                        type="file"
+                        multiple
+                        accept="application/pdf,image/jpeg"
+                        disabled={form.formState.isSubmitting}
+                        onChange={e => {
+                          const files = Array.from(e.target.files || []);
+                          if (files.length + attachmentsPreview.length > 5) {
+                            toast.error('Você pode anexar no máximo 5 arquivos.');
+                            return;
+                          }
+                          for (const file of files) {
+                            if (file.size > 5 * 1024 * 1024) {
+                              toast.error(`O arquivo "${file.name}" excede 5MB.`);
+                              return;
+                            }
+                            if (!['application/pdf', 'image/jpeg'].includes(file.type)) {
+                              toast.error(`O arquivo "${file.name}" não é PDF ou JPEG.`);
+                              return;
+                            }
+                          }
+                          const newFiles = [...attachmentsPreview, ...files].slice(0, 5);
+                          setAttachmentsPreview(newFiles);
+                          form.setValue('attachments', newFiles);
+                        }}
+                        className="absolute inset-0 opacity-0 cursor-pointer"
+                        style={{ zIndex: 2 }}
+                      />
+                    </div>
                     {attachmentsPreview.length > 0 && (
-                      <div className="mt-2 flex flex-wrap gap-2">
+                      <div className="mt-3 flex flex-wrap gap-2">
                         {attachmentsPreview.map((file, idx) => (
-                          <div key={idx} className="flex items-center gap-1 bg-muted px-2 py-1 rounded text-xs">
-                            {file.name}
+                          <div key={idx} className="flex items-center gap-1 bg-blue-50 border border-blue-200 px-2 py-1 rounded text-xs shadow-sm">
+                            <span className="truncate max-w-[120px]" title={file.name}>{file.name}</span>
                             <button
                               type="button"
                               aria-label={`Remover anexo ${file.name}`}
@@ -302,15 +367,26 @@ export function PurchaseRequestForm({ requesterName, setIsLoading }: PurchaseReq
                         ))}
                       </div>
                     )}
+                    <FormMessage />
                   </FormItem>
                 )}
               />
-              <Button type="submit" disabled={form.formState.isSubmitting} className="w-full">
-                {form.formState.isSubmitting ? (
-                  <Loader2 className="animate-spin mr-2 h-4 w-4 inline" />
-                ) : null}
-                Criar Requisição
-              </Button>
+              {/* Botão de submit com tooltip e animação */}
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button type="submit" disabled={form.formState.isSubmitting} size="lg" className="w-full gap-2 text-base font-semibold shadow-md">
+                      {form.formState.isSubmitting ? (
+                        <Loader2 className="animate-spin mr-2 h-5 w-5" />
+                      ) : (
+                        <Send className="h-5 w-5" />
+                      )}
+                      {form.formState.isSubmitting ? 'Enviando...' : 'Criar Requisição'}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">Enviar requisição para aprovação</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </form>
           </Form>
         </CardContent>
