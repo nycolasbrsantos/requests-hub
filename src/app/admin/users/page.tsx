@@ -36,8 +36,8 @@ export default async function AdminUsersPage() {
 	const allUsers = await db.select().from(users);
 
 	return (
-		<div className="min-h-screen bg-muted flex items-center justify-center">
-			<PageContainer className="flex items-center justify-center min-h-screen bg-muted">
+		<div className="min-h-screen flex items-center justify-center">
+			<PageContainer className="flex items-center justify-center">
 				<Card className="shadow-lg w-full max-w-3xl">
 					<CardHeader>
 						<Link href="/home">

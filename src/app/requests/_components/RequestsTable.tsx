@@ -5,7 +5,7 @@ import dayjs from 'dayjs';
 import { StatusBadge } from './StatusBadge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
-import { MoreVertical, Info, CheckCircle2, XCircle, ArrowUpDown, ArrowUp, ArrowDown, Loader2, FileQuestion, Clock, Paperclip, Trash2 } from 'lucide-react';
+import { MoreVertical, Info, CheckCircle2, XCircle, ArrowUpDown, ArrowUp, ArrowDown, Loader2, FileQuestion, Clock, Paperclip, Trash2, Plus, Search, Calendar, ShoppingCart, Wrench, Headphones } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { useSession } from 'next-auth/react';
@@ -16,6 +16,8 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { updateRequestStatus } from '@/actions/update-request-status';
 import { useAction } from 'next-safe-action/hooks';
 import RequestDetailsDialog from './RequestDetailsDialog';
+import { useRouter } from 'next/navigation';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface RequestsTableProps {
   requests: Request[];
@@ -41,6 +43,7 @@ const typeOptions = [
 export default function RequestsTable({ requests, isLoading = false }: RequestsTableProps) {
   const { data: session } = useSession();
   const role = session?.user.role;
+  const router = useRouter();
   const [status, setStatus] = useState('all');
   const [type, setType] = useState('all');
   const [openDetailsId, setOpenDetailsId] = useState<number | null>(null);
@@ -204,18 +207,32 @@ export default function RequestsTable({ requests, isLoading = false }: RequestsT
       {role === 'user' && (
         <div className="mb-4 p-2 rounded bg-gray-100 text-gray-800 text-sm font-medium">Visão de usuário: você pode criar e consultar suas próprias requisições.</div>
       )}
+      {role === 'user' && (
+        <div className="flex justify-end mb-4">
+          <Button
+            variant="default"
+            className="gap-2"
+            onClick={() => router.push('/requests/add?type=purchase')}
+          >
+            <Plus className="w-5 h-5" /> Nova Requisição
+          </Button>
+        </div>
+      )}
       <div className="mb-2 text-sm text-muted-foreground">
         {totalFiltered === 1 ? '1 requisição encontrada' : `${totalFiltered} requisições encontradas`}
       </div>
-      <div className="flex flex-wrap gap-2 mb-4 items-end">
-        <Input
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          placeholder="Buscar por título, solicitante ou ID"
-          className="w-64"
-        />
+      <div className="flex flex-wrap gap-2 mb-4 items-end w-full">
+        <div className="relative w-full sm:w-64">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Buscar por título, solicitante ou ID"
+            className="pl-10 pr-4 w-full"
+          />
+        </div>
         <Select value={status} onValueChange={setStatus}>
-          <SelectTrigger className="w-40">
+          <SelectTrigger className="w-full sm:w-40">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent>
@@ -225,7 +242,7 @@ export default function RequestsTable({ requests, isLoading = false }: RequestsT
           </SelectContent>
         </Select>
         <Select value={type} onValueChange={setType}>
-          <SelectTrigger className="w-40">
+          <SelectTrigger className="w-full sm:w-40">
             <SelectValue placeholder="Tipo" />
           </SelectTrigger>
           <SelectContent>
@@ -234,19 +251,27 @@ export default function RequestsTable({ requests, isLoading = false }: RequestsT
             ))}
           </SelectContent>
         </Select>
-        <Input
-          type="date"
-          value={dateStart}
-          onChange={e => setDateStart(e.target.value)}
-          className="w-40"
-        />
-        <Input
-          type="date"
-          value={dateEnd}
-          onChange={e => setDateEnd(e.target.value)}
-          className="w-40"
-        />
-        <Button variant="outline" onClick={handleClearFilters} className="ml-2">Limpar Filtros</Button>
+        <div className="relative w-full sm:w-40">
+          <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            type="date"
+            value={dateStart}
+            onChange={e => setDateStart(e.target.value)}
+            className="pl-10 pr-4 w-full"
+          />
+        </div>
+        <div className="relative w-full sm:w-40">
+          <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            type="date"
+            value={dateEnd}
+            onChange={e => setDateEnd(e.target.value)}
+            className="pl-10 pr-4 w-full"
+          />
+        </div>
+        <Button variant="ghost" onClick={handleClearFilters} className="ml-0 sm:ml-2 flex items-center gap-1 text-destructive">
+          <XCircle className="w-4 h-4" /> Limpar
+        </Button>
       </div>
       <div className="w-full overflow-x-auto rounded-md border bg-white dark:bg-zinc-900">
         <AnimatePresence mode="wait">
@@ -263,9 +288,6 @@ export default function RequestsTable({ requests, isLoading = false }: RequestsT
                 <th className="px-4 py-2 text-left whitespace-nowrap cursor-pointer select-none" onClick={() => handleSort('customId')}>
                   ID {sort.key === 'customId' ? (sort.direction === 'asc' ? <ArrowUp className="inline w-4 h-4 ml-1 text-primary" /> : <ArrowDown className="inline w-4 h-4 ml-1 text-primary" />) : <ArrowUpDown className="inline w-4 h-4 ml-1 text-muted-foreground" />}
                 </th>
-                <th className="px-4 py-2 text-left whitespace-nowrap max-w-xs cursor-pointer select-none" onClick={() => handleSort('title')}>
-                  Título {sort.key === 'title' ? (sort.direction === 'asc' ? <ArrowUp className="inline w-4 h-4 ml-1 text-primary" /> : <ArrowDown className="inline w-4 h-4 ml-1 text-primary" />) : <ArrowUpDown className="inline w-4 h-4 ml-1 text-muted-foreground" />}
-                </th>
                 <th className="px-4 py-2 text-left whitespace-nowrap cursor-pointer select-none" onClick={() => handleSort('type')}>
                   Tipo {sort.key === 'type' ? (sort.direction === 'asc' ? <ArrowUp className="inline w-4 h-4 ml-1 text-primary" /> : <ArrowDown className="inline w-4 h-4 ml-1 text-primary" />) : <ArrowUpDown className="inline w-4 h-4 ml-1 text-muted-foreground" />}
                 </th>
@@ -278,7 +300,6 @@ export default function RequestsTable({ requests, isLoading = false }: RequestsT
                 <th className="px-4 py-2 text-left whitespace-nowrap cursor-pointer select-none" onClick={() => handleSort('createdAt')}>
                   Data {sort.key === 'createdAt' ? (sort.direction === 'asc' ? <ArrowUp className="inline w-4 h-4 ml-1 text-primary" /> : <ArrowDown className="inline w-4 h-4 ml-1 text-primary" />) : <ArrowUpDown className="inline w-4 h-4 ml-1 text-muted-foreground" />}
                 </th>
-                <th className="px-4 py-2 text-left whitespace-nowrap">Anexos</th>
                 <th className="px-4 py-2 text-left whitespace-nowrap">Ações</th>
               </tr>
             </thead>
@@ -286,28 +307,51 @@ export default function RequestsTable({ requests, isLoading = false }: RequestsT
               {paginatedRequests.map((req) => (
                 <tr key={req.id} className="border-b hover:bg-muted/50">
                   <td className="px-4 py-2 whitespace-nowrap">{req.customId || req.id}</td>
-                  <td className="px-4 py-2 whitespace-nowrap max-w-xs truncate">{req.title}</td>
-                  <td className="px-4 py-2 whitespace-nowrap capitalize">{req.type}</td>
+                  <td className="px-4 py-2 whitespace-nowrap flex items-center justify-center">
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span>
+                            {req.type === 'purchase' && (
+                              <ShoppingCart
+                                className={
+                                  `w-5 h-5 ${req.priority === 'high' ? 'text-red-600' : req.priority === 'medium' ? 'text-yellow-500' : req.priority === 'low' ? 'text-green-600' : 'text-primary'}`
+                                }
+                                aria-label="Compra"
+                              />
+                            )}
+                            {req.type === 'maintenance' && (
+                              <Wrench
+                                className={
+                                  `w-5 h-5 ${req.priority === 'high' ? 'text-red-600' : req.priority === 'medium' ? 'text-yellow-500' : req.priority === 'low' ? 'text-green-600' : 'text-yellow-600'}`
+                                }
+                                aria-label="Manutenção"
+                              />
+                            )}
+                            {["it_ticket", "it_support"].includes(req.type) && (
+                              <Headphones
+                                className={
+                                  `w-5 h-5 ${req.priority === 'high' ? 'text-red-600' : req.priority === 'medium' ? 'text-yellow-500' : req.priority === 'low' ? 'text-green-600' : 'text-blue-600'}`
+                                }
+                                aria-label="Suporte T.I."
+                              />
+                            )}
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent side="top">
+                          {req.type === 'purchase' && 'Compras'}
+                          {req.type === 'maintenance' && 'Manutenção'}
+                          {['it_ticket', 'it_support'].includes(req.type) && 'T.I.'}
+                          {req.priority && (
+                            <span className="block mt-1 text-xs">Prioridade: {req.priority === 'high' ? 'Alta' : req.priority === 'medium' ? 'Média' : req.priority === 'low' ? 'Baixa' : 'Não definida'}</span>
+                          )}
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </td>
                   <td className="px-4 py-2 whitespace-nowrap capitalize"><StatusBadge status={req.status as 'pending' | 'approved' | 'rejected' | 'in_progress' | 'completed'} /></td>
                   <td className="px-4 py-2 whitespace-nowrap max-w-xs truncate">{req.requesterName}</td>
                   <td className="px-4 py-2 whitespace-nowrap">{dayjs(req.createdAt).format('DD/MM/YYYY HH:mm')}</td>
-                  <td className="px-4 py-2 whitespace-nowrap text-center">
-                    {Array.isArray(req.attachments) && req.attachments.length > 0 ? (
-                      <a
-                        href={req.attachments[0].webViewLink || '#'}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        aria-label={`Ver anexo ${req.attachments[0].name}`}
-                        className="inline-flex items-center gap-1 text-primary hover:underline"
-                      >
-                        <Paperclip className="w-4 h-4" />
-                        {req.attachments[0].name}
-                        {req.attachments.length > 1 && <span className="ml-1">+{req.attachments.length - 1}</span>}
-                      </a>
-                    ) : (
-                      <span className="text-muted-foreground">-</span>
-                    )}
-                  </td>
                   <td className="px-4 py-2 whitespace-nowrap space-x-2">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -316,63 +360,103 @@ export default function RequestsTable({ requests, isLoading = false }: RequestsT
                         </button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => setOpenDetailsId(req.id)}>
-                          Visualizar detalhes
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => setOpenHistoryId(req.id)}>
-                          <Clock className="w-4 h-4 mr-2 text-muted-foreground" /> Ver histórico
-                        </DropdownMenuItem>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <DropdownMenuItem onClick={() => setOpenDetailsId(req.id)}>
+                                Visualizar detalhes
+                              </DropdownMenuItem>
+                            </TooltipTrigger>
+                            <TooltipContent>Ver todos os dados da requisição</TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <DropdownMenuItem onClick={() => setOpenHistoryId(req.id)}>
+                                <Clock className="w-4 h-4 mr-2 text-muted-foreground" /> Ver histórico
+                              </DropdownMenuItem>
+                            </TooltipTrigger>
+                            <TooltipContent>Ver histórico de status</TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
                         {(role === 'admin' || role === 'supervisor') && (
-                          <DropdownMenuItem
-                            disabled={updateStatusState === 'executing'}
-                            onClick={() => executeUpdateStatus({ id: req.id, status: 'in_progress', changedBy: session?.user?.name ?? undefined, comment: '' })}
-                          >
-                            {updateStatusState === 'executing' ? (
-                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                            ) : (
-                              <Info className="w-4 h-4 mr-2 text-blue-500" />
-                            )}
-                            Atualizar Status para &quot;Em andamento&quot;
-                          </DropdownMenuItem>
-                        )}
-                        {(role === 'admin' || role === 'supervisor') && (
-                          <DropdownMenuItem
-                            disabled={updateStatusState === 'executing'}
-                            onClick={() => executeUpdateStatus({ id: req.id, status: 'approved', changedBy: session?.user?.name ?? undefined, comment: '' })}
-                          >
-                            {updateStatusState === 'executing' ? (
-                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                            ) : (
-                              <CheckCircle2 className="w-4 h-4 mr-2 text-green-500" />
-                            )}
-                            Aprovar
-                          </DropdownMenuItem>
-                        )}
-                        {(role === 'admin' || role === 'supervisor') && (
-                          <DropdownMenuItem
-                            disabled={updateStatusState === 'executing'}
-                            onClick={() => executeUpdateStatus({ id: req.id, status: 'rejected', changedBy: session?.user?.name ?? undefined, comment: '' })}
-                          >
-                            {updateStatusState === 'executing' ? (
-                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                            ) : (
-                              <XCircle className="w-4 h-4 mr-2 text-red-500" />
-                            )}
-                            Reprovar
-                          </DropdownMenuItem>
+                          <>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <DropdownMenuItem
+                                    disabled={updateStatusState === 'executing'}
+                                    onClick={() => executeUpdateStatus({ id: req.id, status: 'in_progress', changedBy: session?.user?.name ?? undefined, comment: '' })}
+                                  >
+                                    {updateStatusState === 'executing' ? (
+                                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                    ) : (
+                                      <Info className="w-4 h-4 mr-2 text-blue-500" />
+                                    )}
+                                    Atualizar para Em andamento
+                                  </DropdownMenuItem>
+                                </TooltipTrigger>
+                                <TooltipContent>Colocar requisição em andamento</TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <DropdownMenuItem
+                                    disabled={updateStatusState === 'executing'}
+                                    onClick={() => executeUpdateStatus({ id: req.id, status: 'approved', changedBy: session?.user?.name ?? undefined, comment: '' })}
+                                  >
+                                    {updateStatusState === 'executing' ? (
+                                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                    ) : (
+                                      <CheckCircle2 className="w-4 h-4 mr-2 text-green-500" />
+                                    )}
+                                    Aprovar
+                                  </DropdownMenuItem>
+                                </TooltipTrigger>
+                                <TooltipContent>Aprovar requisição</TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <DropdownMenuItem
+                                    disabled={updateStatusState === 'executing'}
+                                    onClick={() => executeUpdateStatus({ id: req.id, status: 'rejected', changedBy: session?.user?.name ?? undefined, comment: '' })}
+                                  >
+                                    {updateStatusState === 'executing' ? (
+                                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                    ) : (
+                                      <XCircle className="w-4 h-4 mr-2 text-red-500" />
+                                    )}
+                                    Reprovar
+                                  </DropdownMenuItem>
+                                </TooltipTrigger>
+                                <TooltipContent>Reprovar requisição</TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </>
                         )}
                         {(role === 'admin' || role === 'encarregado') && (
-                          <DropdownMenuItem
-                            disabled={updateStatusState === 'executing'}
-                            onClick={() => executeUpdateStatus({ id: req.id, status: 'completed', changedBy: session?.user?.name ?? undefined, comment: '' })}
-                          >
-                            {updateStatusState === 'executing' ? (
-                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                            ) : (
-                              <CheckCircle2 className="w-4 h-4 mr-2 text-primary" />
-                            )}
-                            Finalizar
-                          </DropdownMenuItem>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <DropdownMenuItem
+                                  disabled={updateStatusState === 'executing'}
+                                  onClick={() => executeUpdateStatus({ id: req.id, status: 'completed', changedBy: session?.user?.name ?? undefined, comment: '' })}
+                                >
+                                  {updateStatusState === 'executing' ? (
+                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                  ) : (
+                                    <CheckCircle2 className="w-4 h-4 mr-2 text-primary" />
+                                  )}
+                                  Finalizar
+                                </DropdownMenuItem>
+                              </TooltipTrigger>
+                              <TooltipContent>Finalizar requisição</TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
                         )}
                       </DropdownMenuContent>
                     </DropdownMenu>

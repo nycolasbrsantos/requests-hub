@@ -14,5 +14,15 @@ const statusMap = {
 
 export function StatusBadge({ status }: StatusBadgeProps) {
   const { label, color } = statusMap[status] || { label: status, color: 'bg-muted' };
-  return <Badge className={color}>{label}</Badge>;
+  return (
+    <Badge
+      className={
+        `${color} shadow-md border-2 border-white/70 animate-fade-in transition-transform duration-150 hover:scale-105 focus-visible:scale-105 focus-visible:ring-2 focus-visible:ring-ring/50`
+      }
+      tabIndex={0}
+      aria-label={`Status: ${label}`}
+    >
+      {label}
+    </Badge>
+  );
 } 

@@ -3,10 +3,10 @@ import { db } from '@/db';
 import { requests, purchaseRequests, maintenanceRequests, itSupportRequests } from '@/db/schema';
 import { Request } from '@/db/schema';
 import RequestsTable from './_components/RequestsTable';
-import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { ClipboardList, ArrowLeft } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
 
 export default async function RequestsPage() {
   // Busca todas as requisições principais
@@ -37,16 +37,24 @@ export default async function RequestsPage() {
   });
 
   return (
-    <PageContainer className="flex items-center justify-center min-h-screen bg-muted">
-      <Card className="shadow-lg w-full max-w-3xl">
-        <CardHeader>
-          <Link href="/home">
-            <Button variant="outline" className="mb-4 flex items-center gap-2">
-              <ArrowLeft className="w-4 h-4" />
-              Voltar para Home
-            </Button>
-          </Link>
-          <CardTitle className="text-2xl font-bold">Requisições</CardTitle>
+    <PageContainer className="flex items-center justify-center">
+      <Card className="shadow-lg w-full max-w-5xl">
+        <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 w-full justify-between">
+            <div className="flex items-center gap-3">
+              <Link href="/home">
+                <Button variant="outline" className="flex items-center gap-2" aria-label="Voltar para Home">
+                  <ArrowLeft className="w-5 h-5" />
+                </Button>
+              </Link>
+              <ClipboardList className="w-8 h-8 text-primary" />
+              <div>
+                <CardTitle className="text-2xl font-bold">Painel de Requisições</CardTitle>
+                <p className="text-muted-foreground text-sm">Acompanhe o status das suas requisições, filtre por status ou tipo e acesse detalhes ou histórico.</p>
+              </div>
+            </div>
+          </div>
+          {/* Botão Nova Requisição será renderizado no RequestsTable para acesso ao role */}
         </CardHeader>
         <CardContent>
           <RequestsTable requests={enriched} />
