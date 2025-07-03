@@ -2,7 +2,7 @@ import { z } from 'zod'
 
 // Schema para validar os dados ao atualizar o status de uma requisição.
 export const updateRequestStatusSchema = z.object({
-  id: z.number(),
+  customId: z.string(),
   status: z.enum([
     'pending',
     'approved',

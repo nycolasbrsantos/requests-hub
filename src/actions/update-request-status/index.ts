@@ -9,10 +9,10 @@ import { updateRequestStatusSchema } from './schema'
 import { generateRequestPdf } from '@/lib/generate-request-pdf'
 import { uploadFileToFolder } from '@/lib/google-drive'
 
-const handler = async ({ parsedInput }: { parsedInput: { id: number; status: 'pending' | 'approved' | 'rejected' | 'in_progress' | 'completed'; changedBy?: string; comment: string } }) => {
+const handler = async ({ parsedInput }: { parsedInput: { customId: string; status: 'pending' | 'approved' | 'rejected' | 'in_progress' | 'completed'; changedBy?: string; comment: string } }) => {
   try {
-    const { id, status, changedBy, comment } = parsedInput
-    const [request] = await db.select().from(requests).where(eq(requests.id, id))
+    const { customId, status, changedBy, comment } = parsedInput
+    const [request] = await db.select().from(requests).where(eq(requests.customId, customId))
     const prevHistory = Array.isArray(request?.statusHistory) ? request.statusHistory : []
     const newHistory = [
       ...prevHistory,
@@ -26,7 +26,7 @@ const handler = async ({ parsedInput }: { parsedInput: { id: number; status: 'pe
     const [updatedRequest] = await db
       .update(requests)
       .set({ status, updatedAt: new Date(), statusHistory: newHistory })
-      .where(eq(requests.id, id))
+      .where(eq(requests.customId, customId))
       .returning()
 
     if (!updatedRequest) {
@@ -36,7 +36,7 @@ const handler = async ({ parsedInput }: { parsedInput: { id: number; status: 'pe
     // Geração e upload do PDF ao concluir
     if (status === 'completed') {
       // Buscar dados atualizados da requisição
-      const [requestAfterUpdate] = await db.select().from(requests).where(eq(requests.id, id));
+      const [requestAfterUpdate] = await db.select().from(requests).where(eq(requests.customId, customId));
       if (requestAfterUpdate && requestAfterUpdate.driveFolderId) {
         const pdfBuffer = await generateRequestPdf({
           customId: requestAfterUpdate.customId ?? '',
@@ -68,12 +68,12 @@ const handler = async ({ parsedInput }: { parsedInput: { id: number; status: 'pe
         ];
         await db.update(requests)
           .set({ attachments: updatedAttachments })
-          .where(eq(requests.id, id));
+          .where(eq(requests.customId, customId));
       }
     }
 
     revalidatePath('/requests')
-    return { success: `Status da requisição #${id} atualizado!` }
+    return { success: `Status da requisição #${customId} atualizado!` }
   } catch (error) {
     console.error(error)
     return { error: 'Ocorreu um erro ao atualizar o status.' }

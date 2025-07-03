@@ -3,6 +3,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { uploadFileToFolder, createFolder, folderExists, getDriveClient } from '@/lib/google-drive';
 import { db } from '@/db';
 import { files } from '@/db/schema';
+import { eq } from 'drizzle-orm';
+import { requests } from '@/db/schema';
 
 const GOOGLE_DRIVE_ROOT_FOLDER_ID = process.env.GOOGLE_DRIVE_ROOT_FOLDER_ID;
 
@@ -19,9 +21,12 @@ async function getValidRootFolderId(): Promise<string> {
 }
 
 // Função para obter ou criar pasta da requisição
-async function getOrCreateRequestFolder(requestId: number): Promise<string> {
+async function getOrCreateRequestFolder(customId: string): Promise<string> {
+  // Buscar a requisição principal por customId
+  const [request] = await db.select().from(requests).where(eq(requests.customId, customId));
+  if (!request) throw new Error('Requisição não encontrada');
   const rootFolderId = await getValidRootFolderId();
-  const folderName = `Requisicao-${requestId}`;
+  const folderName = `Requisicao-${customId}`;
   try {
     const drive = await getDriveClient();
     const response = await drive.files.list({
@@ -41,10 +46,10 @@ async function getOrCreateRequestFolder(requestId: number): Promise<string> {
 
 export async function POST(req: NextRequest, context: any) {
   const { params } = await context;
-  const requestId = params.requestId;
-  const reqIdNum = Number(requestId);
+  const customId = params.requestId;
+  const reqIdNum = Number(customId);
   if (isNaN(reqIdNum) || reqIdNum <= 0) {
-    console.error('ID da requisição inválido:', requestId);
+    console.error('ID da requisição inválido:', customId);
     return NextResponse.json({
       error: 'ID da requisição inválido',
       details: 'O ID deve ser um número positivo',
@@ -96,7 +101,7 @@ export async function POST(req: NextRequest, context: any) {
   }
   // Adicione logs após cada etapa crítica
   try {
-    const folderId = await getOrCreateRequestFolder(reqIdNum);
+    const folderId = await getOrCreateRequestFolder(customId);
     console.log('Pasta do Google Drive obtida/criada:', folderId);
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);

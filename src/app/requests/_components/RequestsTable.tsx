@@ -6,7 +6,7 @@ import { StatusBadge } from './StatusBadge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { MoreVertical, Info, CheckCircle2, XCircle, ArrowUpDown, ArrowUp, ArrowDown, Loader2, FileQuestion, Clock, Paperclip, Trash2, Plus, Search, Calendar, ShoppingCart, Wrench } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { useSession } from 'next-auth/react';
 import { toast } from 'sonner';
@@ -47,7 +47,7 @@ export default function RequestsTable({ requests, isLoading = false }: RequestsT
   const [status, setStatus] = useState('all');
   const [type, setType] = useState('all');
   const [openDetailsId, setOpenDetailsId] = useState<string | null>(null);
-  const [openHistoryId, setOpenHistoryId] = useState<number | null>(null);
+  const [openHistoryId, setOpenHistoryId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [dateStart, setDateStart] = useState('');
   const [dateEnd, setDateEnd] = useState('');
@@ -55,6 +55,11 @@ export default function RequestsTable({ requests, isLoading = false }: RequestsT
   const [sort, setSort] = useState<{ key: keyof Request | 'customId'; direction: 'asc' | 'desc' }>({ key: 'createdAt', direction: 'desc' });
   const PAGE_SIZE = 10;
   const [isFiltering, setIsFiltering] = useState(false);
+  const [confirmDialog, setConfirmDialog] = useState<null | {
+    action: 'pending' | 'approved' | 'rejected' | 'in_progress' | 'completed' | 'approve' | 'reject',
+    req: any,
+  }>(null);
+  const [isConfirming, setIsConfirming] = useState(false);
 
   const { execute: executeUpdateStatus, status: updateStatusState } = useAction(updateRequestStatus, {
     onSuccess: (data) => {
@@ -144,20 +149,54 @@ export default function RequestsTable({ requests, isLoading = false }: RequestsT
     setDateEnd('');
   };
 
+  function handleAction(action: 'approve' | 'reject' | 'in_progress' | 'completed', req: any) {
+    setConfirmDialog({ action, req });
+  }
+
+  async function handleConfirm() {
+    if (!confirmDialog) return;
+    setIsConfirming(true);
+    try {
+      let status: 'pending' | 'approved' | 'rejected' | 'in_progress' | 'completed';
+      if (confirmDialog.action === 'approve') status = 'approved';
+      else if (confirmDialog.action === 'reject') status = 'rejected';
+      else status = confirmDialog.action;
+      const result: any = await executeUpdateStatus({
+        customId: confirmDialog.req.customId,
+        status,
+        changedBy: session?.user?.name ?? undefined,
+        comment: '',
+      });
+      console.log('Resultado da action:', result);
+      if (result?.data?.success) {
+        toast.success(result.data.success);
+      } else if (result?.data?.error) {
+        toast.error(result.data.error);
+      } else {
+        toast.error('Erro ao atualizar status.');
+      }
+      setConfirmDialog(null);
+    } catch (e) {
+      toast.error('Erro ao atualizar status.');
+    } finally {
+      setIsConfirming(false);
+    }
+  }
+
   if (isLoading || isFiltering) {
     return (
       <div className="w-full overflow-x-auto rounded-md border bg-white dark:bg-zinc-900">
         <table className="min-w-full">
           <thead>
             <tr className="border-b">
-              <th className="px-4 py-2 text-left whitespace-nowrap">ID</th>
-              <th className="px-4 py-2 text-left whitespace-nowrap max-w-xs">Título</th>
-              <th className="px-4 py-2 text-left whitespace-nowrap">Tipo</th>
-              <th className="px-4 py-2 text-left whitespace-nowrap">Status</th>
-              <th className="px-4 py-2 text-left whitespace-nowrap max-w-xs">Solicitante</th>
-              <th className="px-4 py-2 text-left whitespace-nowrap">Data</th>
-              <th className="px-4 py-2 text-left whitespace-nowrap">Anexos</th>
-              <th className="px-4 py-2 text-left whitespace-nowrap">Ações</th>
+              <th className="px-4 py-2 text-left whitespace-nowrap text-[13px] font-semibold w-32">ID</th>
+              <th className="px-4 py-2 text-left whitespace-nowrap text-[13px] max-w-xs">Título</th>
+              <th className="px-4 py-2 text-left whitespace-nowrap text-[13px] font-semibold w-24">Tipo</th>
+              <th className="px-4 py-2 text-left whitespace-nowrap text-[13px] font-semibold w-24">Status</th>
+              <th className="px-4 py-2 text-left whitespace-nowrap text-[13px] max-w-xs">Solicitante</th>
+              <th className="px-4 py-2 text-left whitespace-nowrap text-[13px] font-semibold w-32" onClick={() => handleSort('createdAt')}>Data {sort.key === 'createdAt' ? (sort.direction === 'asc' ? <ArrowUp className="inline w-4 h-4 ml-1 text-primary" /> : <ArrowDown className="inline w-4 h-4 ml-1 text-primary" />) : <ArrowUpDown className="inline w-4 h-4 ml-1 text-muted-foreground" />}</th>
+              <th className="px-4 py-2 text-left whitespace-nowrap text-[13px] font-semibold w-24">Anexos</th>
+              <th className="px-4 py-2 text-left whitespace-nowrap text-[13px] font-semibold w-24">Ações</th>
             </tr>
           </thead>
           <tbody>
@@ -273,11 +312,11 @@ export default function RequestsTable({ requests, isLoading = false }: RequestsT
           <XCircle className="w-4 h-4" /> Limpar
         </Button>
       </div>
-      <div className="w-full overflow-x-auto rounded-md border bg-white dark:bg-zinc-900">
+      <div className="w-full overflow-x-auto bg-white rounded-2xl shadow-md border border-muted p-4 md:p-6">
         <AnimatePresence mode="wait">
           <motion.table
             key={JSON.stringify([status, type, search, dateStart, dateEnd, sort, page])}
-            className="min-w-[600px] text-sm"
+            className="min-w-[600px] text-sm w-full table-fixed"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -285,23 +324,19 @@ export default function RequestsTable({ requests, isLoading = false }: RequestsT
           >
             <thead>
               <tr className="border-b">
-                <th className="px-4 py-2 text-left whitespace-nowrap text-xs font-semibold">ID</th>
-                <th className="px-4 py-2 text-left whitespace-nowrap text-xs font-semibold">Tipo</th>
-                <th className="px-4 py-2 text-left whitespace-nowrap text-xs font-semibold hidden md:table-cell">Status</th>
-                <th className="px-4 py-2 text-left whitespace-nowrap max-w-xs text-xs font-semibold" onClick={() => handleSort('requesterName')}>
-                  Solicitante {sort.key === 'requesterName' ? (sort.direction === 'asc' ? <ArrowUp className="inline w-4 h-4 ml-1 text-primary" /> : <ArrowDown className="inline w-4 h-4 ml-1 text-primary" />) : <ArrowUpDown className="inline w-4 h-4 ml-1 text-muted-foreground" />}
-                </th>
-                <th className="px-4 py-2 text-left whitespace-nowrap text-xs font-semibold" onClick={() => handleSort('createdAt')}>
-                  Data {sort.key === 'createdAt' ? (sort.direction === 'asc' ? <ArrowUp className="inline w-4 h-4 ml-1 text-primary" /> : <ArrowDown className="inline w-4 h-4 ml-1 text-primary" />) : <ArrowUpDown className="inline w-4 h-4 ml-1 text-muted-foreground" />}
-                </th>
-                <th className="px-4 py-2 text-left whitespace-nowrap text-xs font-semibold">Ações</th>
+                <th className="px-4 py-2 text-left whitespace-nowrap text-[13px] font-semibold w-32">ID</th>
+                <th className="px-4 py-2 text-left whitespace-nowrap text-[13px] font-semibold w-24">Tipo</th>
+                <th className="px-4 py-2 text-left whitespace-nowrap text-[13px] font-semibold hidden md:table-cell w-32">Status</th>
+                <th className="px-4 py-2 text-left whitespace-nowrap text-[13px] font-semibold w-full" onClick={() => handleSort('requesterName')}>Solicitante {sort.key === 'requesterName' ? (sort.direction === 'asc' ? <ArrowUp className="inline w-4 h-4 ml-1 text-primary" /> : <ArrowDown className="inline w-4 h-4 ml-1 text-primary" />) : <ArrowUpDown className="inline w-4 h-4 ml-1 text-muted-foreground" />}</th>
+                <th className="px-4 py-2 text-left whitespace-nowrap text-[13px] font-semibold w-32" onClick={() => handleSort('createdAt')}>Data {sort.key === 'createdAt' ? (sort.direction === 'asc' ? <ArrowUp className="inline w-4 h-4 ml-1 text-primary" /> : <ArrowDown className="inline w-4 h-4 ml-1 text-primary" />) : <ArrowUpDown className="inline w-4 h-4 ml-1 text-muted-foreground" />}</th>
+                <th className="px-4 py-2 text-left whitespace-nowrap text-[13px] font-semibold w-24">Ações</th>
               </tr>
             </thead>
             <tbody>
               {paginatedRequests.map((req) => (
-                <tr key={req.id} className="border-b hover:bg-muted/50 align-middle text-xs">
-                  <td className="px-4 py-2 whitespace-nowrap">{req.customId || req.id}</td>
-                  <td className="px-4 py-2 whitespace-nowrap flex items-center justify-center">
+                <tr key={req.id} className="border-b border-muted hover:bg-muted/50 align-middle text-[13px]">
+                  <td className="px-4 py-2 w-32">{req.customId || req.id}</td>
+                  <td className="px-4 py-2 w-24 flex items-center justify-center">
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
@@ -324,12 +359,12 @@ export default function RequestsTable({ requests, isLoading = false }: RequestsT
                       </Tooltip>
                     </TooltipProvider>
                   </td>
-                  <td className="px-4 py-2 whitespace-nowrap hidden md:table-cell">
+                  <td className="px-4 py-2 hidden md:table-cell w-32">
                     <StatusBadge status={req.status} />
                   </td>
-                  <td className="px-4 py-2 max-w-xs truncate">{req.requesterName}</td>
-                  <td className="px-4 py-2 whitespace-nowrap">{dayjs(req.createdAt).format('DD/MM/YYYY HH:mm')}</td>
-                  <td className="px-4 py-2 whitespace-nowrap space-x-2">
+                  <td className="px-4 py-2 w-full truncate">{req.requesterName}</td>
+                  <td className="px-4 py-2 w-32">{dayjs(req.createdAt).format('DD/MM/YYYY HH:mm')}</td>
+                  <td className="px-4 py-2 w-24 space-x-2">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <button className="p-2 rounded hover:bg-muted transition" aria-label="Ações">
@@ -350,95 +385,57 @@ export default function RequestsTable({ requests, isLoading = false }: RequestsT
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <DropdownMenuItem onClick={() => setOpenHistoryId(req.id)}>
+                              <DropdownMenuItem onClick={() => setOpenHistoryId(req.customId)}>
                                 <Clock className="w-4 h-4 mr-2 text-muted-foreground" /> Ver histórico
                               </DropdownMenuItem>
                             </TooltipTrigger>
                             <TooltipContent>Ver histórico de status</TooltipContent>
                           </Tooltip>
                         </TooltipProvider>
-                        {(role === 'admin' || role === 'supervisor') && (
+                        {(role !== 'user') && req.status === 'pending' && (
                           <>
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <DropdownMenuItem
-                                    disabled={updateStatusState === 'executing'}
-                                    onClick={() => executeUpdateStatus({ id: req.id, status: 'in_progress', changedBy: session?.user?.name ?? undefined, comment: '' })}
-                                  >
-                                    {updateStatusState === 'executing' ? (
-                                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                    ) : (
-                                      <Info className="w-4 h-4 mr-2 text-blue-500" />
-                                    )}
-                                    Atualizar para Em andamento
-                                  </DropdownMenuItem>
-                                </TooltipTrigger>
-                                <TooltipContent>Colocar requisição em andamento</TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <DropdownMenuItem
-                                    disabled={updateStatusState === 'executing'}
-                                    onClick={() => executeUpdateStatus({ id: req.id, status: 'approved', changedBy: session?.user?.name ?? undefined, comment: '' })}
-                                  >
-                                    {updateStatusState === 'executing' ? (
-                                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                    ) : (
-                                      <CheckCircle2 className="w-4 h-4 mr-2 text-green-500" />
-                                    )}
-                                    Aprovar
-                                  </DropdownMenuItem>
-                                </TooltipTrigger>
-                                <TooltipContent>Aprovar requisição</TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <DropdownMenuItem
-                                    disabled={updateStatusState === 'executing'}
-                                    onClick={() => executeUpdateStatus({ id: req.id, status: 'rejected', changedBy: session?.user?.name ?? undefined, comment: '' })}
-                                  >
-                                    {updateStatusState === 'executing' ? (
-                                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                    ) : (
-                                      <XCircle className="w-4 h-4 mr-2 text-red-500" />
-                                    )}
-                                    Reprovar
-                                  </DropdownMenuItem>
-                                </TooltipTrigger>
-                                <TooltipContent>Reprovar requisição</TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
+                            {(role === 'admin' || role === 'supervisor') && (
+                              <DropdownMenuItem
+                                disabled={updateStatusState === 'executing'}
+                                onClick={() => handleAction('approve', req)}
+                              >
+                                Aprovar
+                              </DropdownMenuItem>
+                            )}
+                            {(role === 'admin' || role === 'supervisor') && (
+                              <DropdownMenuItem
+                                disabled={updateStatusState === 'executing'}
+                                onClick={() => handleAction('reject', req)}
+                              >
+                                Negar
+                              </DropdownMenuItem>
+                            )}
+                            {(role === 'admin' || role === 'supervisor' || role === 'encarregado') && (
+                              <DropdownMenuItem
+                                disabled={updateStatusState === 'executing'}
+                                onClick={() => handleAction('in_progress', req)}
+                              >
+                                Colocar em andamento
+                              </DropdownMenuItem>
+                            )}
                           </>
                         )}
-                        {(role === 'admin' || role === 'encarregado') && (
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <DropdownMenuItem
-                                  disabled={updateStatusState === 'executing'}
-                                  onClick={() => executeUpdateStatus({ id: req.id, status: 'completed', changedBy: session?.user?.name ?? undefined, comment: '' })}
-                                >
-                                  {updateStatusState === 'executing' ? (
-                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                  ) : (
-                                    <CheckCircle2 className="w-4 h-4 mr-2 text-primary" />
-                                  )}
-                                  Finalizar
-                                </DropdownMenuItem>
-                              </TooltipTrigger>
-                              <TooltipContent>Finalizar requisição</TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
+                        {(role !== 'user') && req.status === 'in_progress' && (
+                          <>
+                            {(role === 'admin' || role === 'encarregado') && (
+                              <DropdownMenuItem
+                                disabled={updateStatusState === 'executing'}
+                                onClick={() => handleAction('completed', req)}
+                              >
+                                Concluir
+                              </DropdownMenuItem>
+                            )}
+                          </>
                         )}
                       </DropdownMenuContent>
                     </DropdownMenu>
                     <RequestDetailsDialog requestId={req.customId} open={openDetailsId === req.customId} onOpenChange={() => setOpenDetailsId(null)} />
-                    <Dialog open={openHistoryId === req.id} onOpenChange={() => setOpenHistoryId(null)}>
+                    <Dialog open={openHistoryId === req.customId} onOpenChange={() => setOpenHistoryId(null)}>
                       <DialogContent className="max-w-md">
                         <DialogHeader>
                           <DialogTitle>Histórico de Status</DialogTitle>
@@ -457,24 +454,24 @@ export default function RequestsTable({ requests, isLoading = false }: RequestsT
                                     ) : (
                                       <StatusBadge status={h.status as 'pending' | 'approved' | 'rejected' | 'in_progress' | 'completed'} />
                                     )}
-                                    <span className="text-xs text-muted-foreground">
+                                    <span className="text-[13px] text-muted-foreground">
                                       {h.status === 'attachment_added' && 'Anexo adicionado'}
                                       {h.status === 'attachment_removed' && 'Anexo removido'}
                                       {h.status !== 'attachment_added' && h.status !== 'attachment_removed' && null}
                                     </span>
-                                    <span className="text-xs text-muted-foreground">{dayjs(h.changedAt).format('DD/MM/YYYY HH:mm')}</span>
+                                    <span className="text-[13px] text-muted-foreground">{dayjs(h.changedAt).format('DD/MM/YYYY HH:mm')}</span>
                                   </div>
-                                  <div className="text-xs text-muted-foreground mt-1">
+                                  <div className="text-[13px] text-muted-foreground mt-1">
                                     por <span className="font-medium text-foreground">{h.changedBy}</span>
                                     {h.comment && (
-                                      <div className="mt-1 text-xs italic text-muted-foreground">Comentário: {h.comment}</div>
+                                      <div className="mt-1 text-[13px] italic text-muted-foreground">Comentário: {h.comment}</div>
                                     )}
                                   </div>
                                 </li>
                               ))}
                             </ol>
                           ) : (
-                            <div className="text-sm text-muted-foreground">Nenhum histórico registrado para esta requisição.</div>
+                            <div className="text-[13px] text-muted-foreground">Nenhum histórico registrado para esta requisição.</div>
                           )}
                         </div>
                       </DialogContent>
@@ -486,20 +483,47 @@ export default function RequestsTable({ requests, isLoading = false }: RequestsT
           </motion.table>
         </AnimatePresence>
         <div className="flex items-center justify-between mt-4">
-          <span className="text-sm text-muted-foreground">
+          <span className="text-[13px] text-muted-foreground">
             Exibindo {paginatedRequests.length} de {filteredRequests.length} requisições
           </span>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>
               Anterior
             </Button>
-            <span className="text-sm px-2">Página {page} de {totalPages}</span>
+            <span className="text-[13px] px-2">Página {page} de {totalPages}</span>
             <Button variant="outline" size="sm" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}>
               Próxima
             </Button>
           </div>
         </div>
       </div>
+      <Dialog open={!!confirmDialog} onOpenChange={open => !open && setConfirmDialog(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {confirmDialog?.action === 'approve' && 'Confirmar Aprovação'}
+              {confirmDialog?.action === 'reject' && 'Confirmar Negação'}
+              {confirmDialog?.action === 'in_progress' && 'Confirmar Início de Andamento'}
+              {confirmDialog?.action === 'completed' && 'Confirmar Conclusão'}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-2 text-sm">
+            Tem certeza que deseja <b>{
+              confirmDialog?.action === 'approve' ? 'aprovar' :
+              confirmDialog?.action === 'reject' ? 'negar' :
+              confirmDialog?.action === 'in_progress' ? 'colocar em andamento' :
+              'concluir'
+            }</b> a requisição <b>{confirmDialog?.req?.customId || confirmDialog?.req?.id}</b>?
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setConfirmDialog(null)} disabled={isConfirming}>Cancelar</Button>
+            <Button variant="default" onClick={handleConfirm} disabled={isConfirming}>
+              {isConfirming ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+              Confirmar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 } 

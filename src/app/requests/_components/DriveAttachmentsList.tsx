@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 
 interface Attachment {
-  id: number;
+  customId: string;
   filename: string;
   originalName: string;
   mimeType: string;
@@ -12,27 +12,27 @@ interface Attachment {
 }
 
 interface Props {
-  requestId: number;
+  requestId: string;
   attachments: Attachment[];
   onDelete?: (fileId: string) => void;
 }
 
 export function DriveAttachmentsList({ requestId, attachments, onDelete }: Props) {
-  const [deleting, setDeleting] = useState<number | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
 
-  const handleDelete = async (fileId: number) => {
+  const handleDelete = async (fileId: string) => {
     setDeleting(fileId);
     const res = await fetch(`/api/requests/${requestId}/files/${fileId}`, {
       method: "DELETE",
     });
-    if (res.ok && onDelete) onDelete(String(fileId));
+    if (res.ok && onDelete) onDelete(fileId);
     setDeleting(null);
   };
 
   return (
     <div className="space-y-2">
       {attachments.map((att) => (
-        <div key={att.id} className="flex items-center gap-2">
+        <div key={att.customId} className="flex items-center gap-2">
           <a
             href={att.webViewLink}
             target="_blank"
@@ -46,10 +46,10 @@ export function DriveAttachmentsList({ requestId, attachments, onDelete }: Props
           <Button
             size="sm"
             variant="destructive"
-            disabled={deleting === att.id}
-            onClick={() => handleDelete(att.id)}
+            disabled={deleting === att.customId}
+            onClick={() => handleDelete(att.customId)}
           >
-            {deleting === att.id ? "Removendo..." : "Remover"}
+            {deleting === att.customId ? "Removendo..." : "Remover"}
           </Button>
         </div>
       ))}

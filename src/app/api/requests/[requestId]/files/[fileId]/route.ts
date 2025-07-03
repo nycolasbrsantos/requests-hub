@@ -11,9 +11,9 @@ export async function DELETE(
 ) {
   try {
     const { params } = await context;
-    const requestId = Number(params.requestId);
+    const customId = params.requestId;
     const fileId = Number(params.fileId);
-    if (isNaN(requestId) || isNaN(fileId)) {
+    if (isNaN(fileId)) {
       return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
     }
 
@@ -23,6 +23,11 @@ export async function DELETE(
       return NextResponse.json({ error: 'Arquivo não encontrado' }, { status: 404 });
     }
 
+    // Busca o request principal pelo customId
+    const [request] = await db.select().from(requests).where(eq(requests.customId, customId));
+    if (!request) return NextResponse.json({ error: 'Request not found' }, { status: 404 });
+    const reqIdNum = request.id;
+
     // Remove do Google Drive usando driveFileId
     await deleteFile(file.driveFileId);
 
@@ -30,7 +35,6 @@ export async function DELETE(
     await db.delete(files).where(eq(files.id, fileId));
 
     // Atualiza histórico da requisição
-    const [request] = await db.select().from(requests).where(eq(requests.id, requestId));
     const prevHistory = Array.isArray(request?.statusHistory)
       ? request.statusHistory.filter((h): h is {
           status: 'pending' | 'approved' | 'rejected' | 'in_progress' | 'completed' | 'attachment_added' | 'attachment_removed';
@@ -65,7 +69,7 @@ export async function DELETE(
         comment: `Removido arquivo ${file.originalName}`,
       },
     ];
-    await db.update(requests).set({ statusHistory: newHistory, updatedAt: new Date() }).where(eq(requests.id, requestId));
+    await db.update(requests).set({ statusHistory: newHistory, updatedAt: new Date() }).where(eq(requests.id, reqIdNum));
 
     return NextResponse.json({ success: true });
   } catch (error) {

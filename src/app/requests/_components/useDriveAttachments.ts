@@ -9,7 +9,7 @@ export interface DriveAttachment {
   uploadedBy: string;
 }
 
-export function useDriveAttachments(requestId: number) {
+export function useDriveAttachments(requestId: string) {
   const [attachments, setAttachments] = useState<DriveAttachment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

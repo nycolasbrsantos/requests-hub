@@ -36,6 +36,11 @@ export default async function RequestsPage() {
     return req;
   });
 
+  // Filtrar por status
+  const pendingRequests = enriched.filter(r => r.status === 'pending');
+  const inProgressRequests = enriched.filter(r => r.status === 'in_progress');
+  const finishedRequests = enriched.filter(r => ['completed', 'rejected', 'approved'].includes(r.status));
+
   return (
     <PageContainer className="flex items-center justify-center">
       <Card className="shadow-lg w-full max-w-5xl">
@@ -57,7 +62,29 @@ export default async function RequestsPage() {
           {/* Botão Nova Requisição será renderizado no RequestsTable para acesso ao role */}
         </CardHeader>
         <CardContent>
-          <RequestsTable requests={enriched} />
+          <div className="space-y-10">
+            <section>
+              <div className="flex items-center gap-2 mb-2">
+                <h2 className="text-lg font-bold">Pendentes</h2>
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">{pendingRequests.length}</span>
+              </div>
+              <RequestsTable requests={pendingRequests} />
+            </section>
+            <section>
+              <div className="flex items-center gap-2 mb-2">
+                <h2 className="text-lg font-bold">Em Andamento</h2>
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">{inProgressRequests.length}</span>
+              </div>
+              <RequestsTable requests={inProgressRequests} />
+            </section>
+            <section>
+              <div className="flex items-center gap-2 mb-2">
+                <h2 className="text-lg font-bold">Concluídas / Negadas</h2>
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">{finishedRequests.length}</span>
+              </div>
+              <RequestsTable requests={finishedRequests} />
+            </section>
+          </div>
         </CardContent>
       </Card>
     </PageContainer>

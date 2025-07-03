@@ -8,11 +8,8 @@ export const runtime = 'nodejs';
 
 export async function GET(req: NextRequest, context: any) {
   const { params } = await context;
-  const requestId = Number(params.requestId);
-  if (isNaN(requestId)) {
-    return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
-  }
-  const [request] = await db.select().from(requests).where(eq(requests.id, requestId));
+  const customId = params.requestId;
+  const [request] = await db.select().from(requests).where(eq(requests.customId, customId));
   if (!request) {
     return NextResponse.json({ error: 'Requisição não encontrada' }, { status: 404 });
   }

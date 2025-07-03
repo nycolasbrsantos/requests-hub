@@ -9,7 +9,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 interface Props {
-  requestId: number;
+  requestId: string;
   uploadedBy: string;
   onSuccess?: () => void;
 }

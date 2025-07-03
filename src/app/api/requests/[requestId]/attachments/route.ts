@@ -9,10 +9,10 @@ export async function GET(req: NextRequest, context: any) {
   const { params } = await context;
   const requestId = params.requestId;
   try {
-    const reqIdNum = Number(requestId);
-    if (isNaN(reqIdNum)) {
-      return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
-    }
+    // Buscar a requisição principal por customId
+    const [request] = await db.select().from(requests).where(eq(requests.customId, requestId));
+    if (!request) return new Response('Not found', { status: 404 });
+    const reqIdNum = request.id;
     // Busca anexos no banco
     let attachments = [];
     try {
@@ -45,10 +45,10 @@ export async function POST(req: NextRequest, context: any) {
   const { params } = await context;
   const requestId = params.requestId;
   try {
-    const reqIdNum = Number(requestId);
-    if (isNaN(reqIdNum)) {
-      return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
-    }
+    // Buscar a requisição principal por customId
+    const [request] = await db.select().from(requests).where(eq(requests.customId, requestId));
+    if (!request) return new Response('Not found', { status: 404 });
+    const reqIdNum = request.id;
     // Buscar pasta do Google Drive associada à requisição
     const requestRow = await db.select().from(requests).where(eq(requests.id, reqIdNum));
     const driveFolderId = requestRow[0]?.driveFolderId;

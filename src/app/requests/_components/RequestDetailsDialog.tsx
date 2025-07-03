@@ -46,7 +46,7 @@ interface StatusHistoryItem {
 type StatusType = 'pending' | 'approved' | 'rejected' | 'in_progress' | 'completed';
 
 interface RequestDetails {
-  id: number;
+  id: string;
   customId?: string;
   title: string;
   type: string;
@@ -70,13 +70,13 @@ interface RequestDetails {
 }
 
 interface RequestDetailsDialogProps {
-  requestId: number;
+  requestId: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
 // Hook para buscar detalhes da requisição
-function useRequestDetails(requestId: number, open: boolean) {
+function useRequestDetails(requestId: string, open: boolean) {
   const [request, setRequest] = useState<RequestDetails | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
