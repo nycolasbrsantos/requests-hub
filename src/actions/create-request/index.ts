@@ -10,6 +10,7 @@ import { actionClient } from '@/lib/safe-actions'
 import { createRequestSchema } from './schema'
 import { generateRequestPdf } from '@/lib/generate-request-pdf'
 import { uploadFileToFolder, getRootFolderIdByType, createFolder } from '@/lib/google-drive'
+import { reaisToCentavos } from '@/lib/utils'
 
 // Se você quiser manter o handler separado:
 const handler = async ({
@@ -101,7 +102,7 @@ const handler = async ({
         customId,
         attachments: validAttachments,
         driveFolderId,
-        unitPrice: parsedInput.unitPrice ? String(parsedInput.unitPrice) : undefined,
+        unitPriceInCents: parsedInput.unitPriceInCents ? reaisToCentavos(parsedInput.unitPriceInCents) : undefined,
       })
       .returning();
 
@@ -112,7 +113,7 @@ const handler = async ({
           requestId: newRequest.id,
           productName: parsedInput.productName,
           quantity: parsedInput.quantity,
-          unitPrice: parsedInput.unitPrice,
+          unitPriceInCents: parsedInput.unitPriceInCents ? reaisToCentavos(parsedInput.unitPriceInCents) : undefined,
           supplier: parsedInput.supplier,
           priority: parsedInput.priority,
         });

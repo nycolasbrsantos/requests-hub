@@ -57,7 +57,7 @@ interface RequestDetails {
   supplier?: string;
   productName?: string;
   quantity?: number;
-  unitPrice?: number;
+  unitPriceInCents?: number;
   attachments: Attachment[];
   statusHistory: StatusHistoryItem[];
   priority?: string;
@@ -170,7 +170,7 @@ function RequestSpecificDetails({ request }: { request: RequestDetails }) {
         </div>
         {request.productName && <div><b>Produto:</b> {request.productName}</div>}
         {request.quantity !== undefined && <div><b>Quantidade:</b> {request.quantity}</div>}
-        {request.unitPrice !== undefined && <div><b>Preço Unitário:</b> R$ {request.unitPrice}</div>}
+        {request.unitPriceInCents !== undefined && <div><b>Preço Unitário:</b> R$ {request.unitPriceInCents}</div>}
         {request.supplier && <div><b>Fornecedor:</b> {request.supplier}</div>}
       </div>
     );

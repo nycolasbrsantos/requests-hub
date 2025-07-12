@@ -1,5 +1,4 @@
 import {
-  decimal,
   integer,
   pgEnum,
   pgTable,
@@ -59,7 +58,7 @@ export const requests = pgTable('requests', {
   // --- Campos específicos para 'Ordem de Compra' ---
   productName: varchar('product_name', { length: 256 }),
   quantity: integer('quantity'),
-  unitPrice: decimal('unit_price', { precision: 10, scale: 2 }),
+  unitPriceInCents: integer('unit_price_in_cents').notNull(), // Armazenado em centavos
   supplier: varchar('supplier', { length: 256 }),
 
   // --- Campos específicos para 'Ordem de Manutenção' ---
@@ -108,7 +107,7 @@ export const purchaseRequests = pgTable('purchase_requests', {
   requestId: integer('request_id').notNull().references(() => requests.id),
   productName: varchar('product_name', { length: 256 }),
   quantity: integer('quantity'),
-  unitPrice: decimal('unit_price', { precision: 10, scale: 2 }),
+  unitPriceInCents: integer('unit_price_in_cents'), // Armazenado em centavos
   supplier: varchar('supplier', { length: 256 }),
   priority: requestPriorityEnum('priority'),
 });

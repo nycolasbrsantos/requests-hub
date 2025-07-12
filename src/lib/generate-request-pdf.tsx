@@ -33,7 +33,7 @@ export async function generateRequestPdf(request: {
   status: string;
   productName?: string;
   quantity?: number;
-  unitPrice?: string;
+  unitPriceInCents?: string;
   supplier?: string;
   priority?: string;
   description?: string;
@@ -79,7 +79,7 @@ export async function generateRequestPdf(request: {
             <Text>
               <Text style={styles.label}>Produto:</Text>{' '}{request.productName || '-'}{' '}
               <Text style={styles.label}>Quantidade:</Text>{' '}{request.quantity || '-'}{' '}
-              <Text style={styles.label}>Preço Unitário:</Text>{' '}{request.unitPrice || '-'}{' '}
+              <Text style={styles.label}>Preço Unitário:</Text>{' '}{request.unitPriceInCents || '-'}{' '}
               <Text style={styles.label}>Fornecedor:</Text>{' '}{request.supplier || '-'}{' '}
               <Text style={styles.label}>Prioridade:</Text>{' '}{request.priority || '-'}{' '}
             </Text>

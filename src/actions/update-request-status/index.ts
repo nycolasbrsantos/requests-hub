@@ -45,7 +45,7 @@ const handler = async ({ parsedInput }: { parsedInput: { customId: string; statu
           status: requestAfterUpdate.status ?? '',
           productName: requestAfterUpdate.productName ?? undefined,
           quantity: requestAfterUpdate.quantity ?? undefined,
-          unitPrice: requestAfterUpdate.unitPrice ? String(requestAfterUpdate.unitPrice) : undefined,
+          unitPriceInCents: requestAfterUpdate.unitPriceInCents ? String(requestAfterUpdate.unitPriceInCents) : undefined,
           supplier: requestAfterUpdate.supplier ?? undefined,
           priority: requestAfterUpdate.priority ?? undefined,
           description: requestAfterUpdate.description ?? undefined,

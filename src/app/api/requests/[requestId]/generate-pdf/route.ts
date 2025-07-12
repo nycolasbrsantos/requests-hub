@@ -20,7 +20,7 @@ export async function GET(req: NextRequest, context: any) {
     status: request.status ?? '',
     productName: request.productName ?? undefined,
     quantity: request.quantity ?? undefined,
-    unitPrice: request.unitPrice ? String(request.unitPrice) : undefined,
+    unitPriceInCents: request.unitPriceInCents ? String(request.unitPriceInCents) : undefined,
     supplier: request.supplier ?? undefined,
     priority: request.priority ?? undefined,
     description: request.description ?? undefined,

@@ -21,13 +21,14 @@ import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Skeleton } from '@/components/ui/skeleton';
+import { reaisToCentavos } from '@/lib/utils';
 
 const MAX_FILES = 5;
 
 const productItemSchema = z.object({
   productName: z.string().min(2, 'Informe o nome do produto.'),
   quantity: z.coerce.number().min(1, 'Quantidade deve ser maior que zero.'),
-  unitPrice: z.string().optional(),
+  unitPriceInCents: z.string().optional(),
   supplier: z.string().optional(),
 });
 
@@ -49,7 +50,7 @@ export function PurchaseRequestForm({ requesterName, setIsLoading }: PurchaseReq
   const form = useForm<PurchaseFormValues>({
     resolver: zodResolver(purchaseSchema),
     defaultValues: {
-      products: [{ productName: '', quantity: 1, unitPrice: '', supplier: '' }],
+      products: [{ productName: '', quantity: 1, unitPriceInCents: '', supplier: '' }],
       description: '',
       priority: 'medium',
       attachments: [],
@@ -160,12 +161,24 @@ export function PurchaseRequestForm({ requesterName, setIsLoading }: PurchaseReq
 
   async function onSubmit(values: PurchaseFormValues) {
     setIsLoading(true);
+    
+    // Pegar o primeiro produto (ou fazer merge se houver múltiplos)
+    const firstProduct = values.products[0];
+    const unitPriceInCents = firstProduct.unitPriceInCents && firstProduct.unitPriceInCents !== '' 
+      ? reaisToCentavos(parseFloat(firstProduct.unitPriceInCents)) 
+      : 0;
+    
     await execute({
-      ...values,
-      title: values.products.map(p => p.productName).join(', '),
-      type: 'purchase',
-      requesterName,
-      attachments: attachmentsPreview,
+      productName: firstProduct.productName || '',
+      quantity: firstProduct.quantity || 1,
+      unitPriceInCents: unitPriceInCents || 0,
+      supplier: firstProduct.supplier || '',
+      description: values.description || '',
+      priority: values.priority || 'medium',
+      title: values.products.map(p => p.productName || '').join(', ') || 'Nova requisição de compra',
+      type: 'purchase' as const,
+      requesterName: requesterName || '',
+      attachments: attachmentsPreview || [],
     });
     form.reset();
     setAttachmentsPreview([]);
@@ -233,14 +246,14 @@ export function PurchaseRequestForm({ requesterName, setIsLoading }: PurchaseReq
                     />
                     <FormField
                       control={form.control}
-                      name={`products.${idx}.unitPrice` as const}
+                      name={`products.${idx}.unitPriceInCents` as const}
                       render={({ field }) => (
                         <FormItem className="relative w-full">
-                          <FormLabel htmlFor={`unitPrice-${idx}`} className={form.formState.errors.products?.[idx]?.unitPrice ? 'text-destructive' : ''}>Preço Unitário</FormLabel>
+                          <FormLabel htmlFor={`unitPriceInCents-${idx}`} className={form.formState.errors.products?.[idx]?.unitPriceInCents ? 'text-destructive' : ''}>Preço Unitário</FormLabel>
                           <div className="relative">
                             <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                             <NumericFormat
-                              id={`unitPrice-${idx}`}
+                              id={`unitPriceInCents-${idx}`}
                               className="pl-10 w-full min-w-[110px] sm:min-w-[140px] text-base"
                               thousandSeparator="."
                               decimalSeparator=","
@@ -249,7 +262,7 @@ export function PurchaseRequestForm({ requesterName, setIsLoading }: PurchaseReq
                               placeholder="0,00"
                               customInput={Input}
                               value={field.value || ''}
-                              onValueChange={(values) => form.setValue(`products.${idx}.unitPrice`, values.value ?? '')}
+                              onValueChange={(values) => form.setValue(`products.${idx}.unitPriceInCents`, values.value ?? '')}
                             />
                           </div>
                         </FormItem>
@@ -285,7 +298,7 @@ export function PurchaseRequestForm({ requesterName, setIsLoading }: PurchaseReq
                     </div>
                   </div>
                 ))}
-                <Button type="button" variant="outline" className="mt-2 w-full sm:w-auto gap-2" onClick={() => append({ productName: '', quantity: 1, unitPrice: '', supplier: '' })}>
+                <Button type="button" variant="outline" className="mt-2 w-full sm:w-auto gap-2" onClick={() => append({ productName: '', quantity: 1, unitPriceInCents: '', supplier: '' })}>
                   + Adicionar produto
                 </Button>
               </div>

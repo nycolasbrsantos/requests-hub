@@ -10,7 +10,7 @@ export const createRequestSchema = z.object({
   // Compra
   productName: z.string().min(2, 'Informe o nome do produto.').optional(),
   quantity: z.coerce.number().min(1, 'Quantidade deve ser maior que zero.').optional(),
-  unitPrice: z.string().min(1, 'Informe o preço unitário.').optional(),
+  unitPriceInCents: z.coerce.number().min(1, 'Informe o preço unitário.').optional(),
   supplier: z.string().min(2, 'Informe o fornecedor.').optional(),
 
   // Manutenção
