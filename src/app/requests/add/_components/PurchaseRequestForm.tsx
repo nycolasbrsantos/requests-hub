@@ -2,7 +2,6 @@
 import { useAction } from 'next-safe-action/hooks';
 import { toast } from 'sonner';
 import * as z from 'zod';
-import { NumericFormat } from 'react-number-format';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useState, useEffect, useRef } from 'react';
@@ -18,11 +17,10 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Skeleton } from '@/components/ui/skeleton';
-import { reaisToCentavos } from '@/lib/utils';
 
 // Substituir o schema local pelo do backend
 // const purchaseSchema = z.object({ ... });
@@ -206,77 +204,127 @@ export function PurchaseRequestForm({ requesterName, setIsLoading }: PurchaseReq
         <CardContent className="pt-0 pb-8 px-2 sm:px-10">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-              {/* Produtos dinâmicos */}
-              <div className="space-y-4">
-                {/* Renderização dos campos: */}
-                <FormField
-                  control={form.control}
-                  name="productName"
-                  render={({ field }) => (
-                    <FormItem className="relative w-full">
-                      <FormLabel htmlFor="productName" className={form.formState.errors.productName ? 'text-destructive' : ''}>Product</FormLabel>
-                      <div className="relative">
-                        <ShoppingBag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                        <Input id="productName" placeholder="Ex: Books" {...field} className="pl-10 w-full text-base" />
-                      </div>
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="quantity"
-                  render={({ field }) => (
-                    <FormItem className="relative w-full">
-                      <FormLabel htmlFor="quantity" className={form.formState.errors.quantity ? 'text-destructive' : ''}>Quantity</FormLabel>
-                      <div className="relative">
-                        <Hash className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                        <Input id="quantity" type="number" min={1} placeholder="0" {...field} className="pl-10 w-full text-base" />
-                      </div>
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="unitPriceInCents"
-                  render={({ field }) => (
-                    <FormItem className="relative w-full">
-                      <FormLabel htmlFor="unitPriceInCents" className={form.formState.errors.unitPriceInCents ? 'text-destructive' : ''}>Unit Price (cents)</FormLabel>
-                      <div className="relative">
-                        <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                        <Input id="unitPriceInCents" type="number" min={1} placeholder="0" {...field} className="pl-10 w-full text-base" />
-                      </div>
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="supplier"
-                  render={({ field }) => (
-                    <FormItem className="relative w-full">
-                      <FormLabel htmlFor="supplier" className={form.formState.errors.supplier ? 'text-destructive' : ''}>Supplier</FormLabel>
-                      <div className="relative">
-                        <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                        <Input id="supplier" placeholder="Ex: Supplier Name" {...field} className="pl-10 w-full text-base" />
-                      </div>
-                    </FormItem>
-                  )}
-                />
-                {/* Coluna do botão X */}
-                <div className="flex sm:justify-center sm:items-center mt-2 sm:mt-0">
-                  {/* {fields.length > 1 && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="text-red-500 hover:text-red-700 focus:ring-2 focus:ring-red-400"
-                      onClick={() => remove(idx)}
-                      aria-label="Remove product"
-                    >
-                      <X className="w-5 h-5" />
-                    </Button>
-                  )} */}
-                </div>
-              </div>
+              {/* Seleção de tipo de requisição */}
+              <FormField
+                control={form.control}
+                name="type"
+                render={({ field }) => (
+                  <FormItem className="w-full">
+                    <FormLabel>Request type</FormLabel>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select the type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="purchase">Product/Equipment</SelectItem>
+                        <SelectItem value="service">Service</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormItem>
+                )}
+              />
+              {/* Campos específicos conforme o tipo */}
+              {form.watch('type') === 'purchase' && (
+                <>
+                  <FormField
+                    control={form.control}
+                    name="productName"
+                    render={({ field }) => (
+                      <FormItem className="relative w-full">
+                        <FormLabel htmlFor="productName" className={form.formState.errors.productName ? 'text-destructive' : ''}>Product/Equipment</FormLabel>
+                        <div className="relative">
+                          <ShoppingBag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                          <Input id="productName" placeholder="e.g. HP Printer" {...field} className="pl-10 w-full text-base" />
+                        </div>
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="quantity"
+                    render={({ field }) => (
+                      <FormItem className="relative w-full">
+                        <FormLabel htmlFor="quantity" className={form.formState.errors.quantity ? 'text-destructive' : ''}>Quantity</FormLabel>
+                        <div className="relative">
+                          <Hash className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                          <Input id="quantity" type="number" min={1} placeholder="0" {...field} className="pl-10 w-full text-base" />
+                        </div>
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="unitPriceInCents"
+                    render={({ field }) => (
+                      <FormItem className="relative w-full">
+                        <FormLabel htmlFor="unitPriceInCents" className={form.formState.errors.unitPriceInCents ? 'text-destructive' : ''}>Unit price (cents)</FormLabel>
+                        <div className="relative">
+                          <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                          <Input id="unitPriceInCents" type="number" min={1} placeholder="0" {...field} className="pl-10 w-full text-base" />
+                        </div>
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="supplier"
+                    render={({ field }) => (
+                      <FormItem className="relative w-full">
+                        <FormLabel htmlFor="supplier" className={form.formState.errors.supplier ? 'text-destructive' : ''}>Supplier</FormLabel>
+                        <div className="relative">
+                          <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                          <Input id="supplier" placeholder="e.g. Amazon" {...field} className="pl-10 w-full text-base" />
+                        </div>
+                      </FormItem>
+                    )}
+                  />
+                </>
+              )}
+              {form.watch('type') === 'service' && (
+                <>
+                  <FormField
+                    control={form.control}
+                    name="serviceDescription"
+                    render={({ field }) => (
+                      <FormItem className="w-full">
+                        <FormLabel>Service description</FormLabel>
+                        <Textarea {...field} placeholder="Describe the service to be performed..." />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="company"
+                    render={({ field }) => (
+                      <FormItem className="w-full">
+                        <FormLabel>Provider company</FormLabel>
+                        <Input {...field} placeholder="Company name" />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="scheduledDate"
+                    render={({ field }) => (
+                      <FormItem className="w-full">
+                        <FormLabel>Scheduled date</FormLabel>
+                        <Input {...field} type="date" />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="technicalResponsible"
+                    render={({ field }) => (
+                      <FormItem className="w-full">
+                        <FormLabel>Technical responsible</FormLabel>
+                        <Input {...field} placeholder="Name of the responsible person" />
+                      </FormItem>
+                    )}
+                  />
+                </>
+              )}
+              {/* Prioridade, descrição, anexos e botão de submit permanecem iguais */}
               {/* Prioridade */}
               <FormField
                 control={form.control}
@@ -325,7 +373,7 @@ export function PurchaseRequestForm({ requesterName, setIsLoading }: PurchaseReq
                 render={({ field }) => (
                   <FormItem className="w-full">
                     <FormLabel htmlFor="description" className={form.formState.errors.description ? 'text-destructive' : ''}>Description</FormLabel>
-                    <Textarea id="description" placeholder="Describe the need for the purchase..." rows={3} {...field} className="w-full text-base" />
+                    <Textarea id="description" placeholder="Describe the need for the request..." rows={3} {...field} className="w-full text-base" />
                   </FormItem>
                 )}
               />

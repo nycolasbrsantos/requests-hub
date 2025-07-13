@@ -6,36 +6,30 @@ import { ArrowLeft, ShoppingCart, Wrench } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useSession } from 'next-auth/react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { PurchaseRequestForm } from './_components/PurchaseRequestForm';
 import { MaintenanceRequestForm } from './_components/MaintenanceRequestForm';
-import { ServiceRequestForm } from './_components/ServiceRequestForm';
+// import { ServiceRequestForm } from './_components/ServiceRequestForm';
 
 export default function AddRequestPage() {
-  const { data: session } = useSession()
-  const userName = session?.user?.name || ''
+  const { data: session } = useSession();
+  const userName = session?.user?.name || '';
+  const [selectedType, setSelectedType] = useState<'purchaseOrService' | 'maintenance' | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
-  const params = useSearchParams();
-  const type = params.get('type');
 
-  let icon = <ShoppingCart className="w-8 h-8 text-primary" />;
   let title = 'New Request';
-  let subtitle = 'Fill out the form below to request a new request. Please be detailed to speed up processing.';
+  let subtitle = 'Select the type of request you want to create.';
   let FormComponent = null;
-  if (type === 'maintenance') {
-    icon = <Wrench className="w-8 h-8 text-primary" />;
-    title = 'New Maintenance Request';
-    subtitle = 'Fill out the form below to request new maintenance. Please be detailed to speed up processing.';
-    FormComponent = <MaintenanceRequestForm requesterName={userName} setIsLoading={setIsLoading} />;
-  } else if (type === 'service') {
-    FormComponent = <ServiceRequestForm requesterName={userName} setIsLoading={setIsLoading} />;
-    title = 'New Service Request';
-    subtitle = 'Fill out the form below to request a new service.';
-  } else {
+
+  if (selectedType === 'purchaseOrService') {
+    title = 'New Purchase/Service Request';
+    subtitle = 'Fill out the form below to request a product, equipment, or service.';
     FormComponent = <PurchaseRequestForm requesterName={userName} setIsLoading={setIsLoading} />;
-    title = 'New Purchase Request';
-    subtitle = 'Fill out the form below to request a new purchase.';
+  } else if (selectedType === 'maintenance') {
+    title = 'New Maintenance Request';
+    subtitle = 'Fill out the form below to request maintenance.';
+    FormComponent = <MaintenanceRequestForm requesterName={userName} setIsLoading={setIsLoading} />;
   }
 
   return (
@@ -55,13 +49,30 @@ export default function AddRequestPage() {
             <ArrowLeft className="w-4 h-4" />
             Back to Home
           </Button>
-          <div className="flex items-center gap-3 mt-2">
-            {icon}
-            <CardTitle className="text-3xl font-extrabold text-primary tracking-tight">{title}</CardTitle>
-          </div>
+          <CardTitle className="text-3xl font-extrabold text-primary tracking-tight">{title}</CardTitle>
           <p className="text-muted-foreground text-base mt-1 mb-2 text-center max-w-xl">{subtitle}</p>
         </CardHeader>
         <CardContent className="pt-0 pb-8 px-6 sm:px-10">
+          {!selectedType && (
+            <div className="flex flex-col gap-6 items-center justify-center py-8">
+              <Button
+                className="w-full max-w-xs flex items-center gap-3 text-lg"
+                variant="default"
+                onClick={() => setSelectedType('purchaseOrService')}
+                disabled={isLoading}
+              >
+                <ShoppingCart className="w-6 h-6" /> New Purchase/Service Request
+              </Button>
+              <Button
+                className="w-full max-w-xs flex items-center gap-3 text-lg"
+                variant="secondary"
+                onClick={() => setSelectedType('maintenance')}
+                disabled={isLoading}
+              >
+                <Wrench className="w-6 h-6" /> New Maintenance Request
+              </Button>
+            </div>
+          )}
           {FormComponent}
         </CardContent>
       </Card>
@@ -73,7 +84,7 @@ export default function AddRequestPage() {
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
             </svg>
             <span className="text-primary mt-6 text-xl font-semibold animate-pulse select-none">
-              Sending request<span className="inline-block animate-bounce">...</span>
+              Enviando requisição<span className="inline-block animate-bounce">...</span>
             </span>
           </div>
         </div>

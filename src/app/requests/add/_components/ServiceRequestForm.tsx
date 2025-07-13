@@ -119,8 +119,8 @@ export function ServiceRequestForm({ requesterName, setIsLoading }: ServiceReque
           name="serviceDescription"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Service Description</FormLabel>
-              <Textarea {...field} placeholder="Describe the service..." />
+              <FormLabel>Service description</FormLabel>
+              <Textarea {...field} placeholder="Describe the service to be performed..." />
             </FormItem>
           )}
         />
@@ -129,7 +129,7 @@ export function ServiceRequestForm({ requesterName, setIsLoading }: ServiceReque
           name="company"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Provider Company</FormLabel>
+              <FormLabel>Provider company</FormLabel>
               <Input {...field} placeholder="Company name" />
             </FormItem>
           )}
@@ -139,7 +139,7 @@ export function ServiceRequestForm({ requesterName, setIsLoading }: ServiceReque
           name="scheduledDate"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Scheduled Date</FormLabel>
+              <FormLabel>Scheduled date</FormLabel>
               <Input {...field} type="date" />
             </FormItem>
           )}
@@ -149,8 +149,8 @@ export function ServiceRequestForm({ requesterName, setIsLoading }: ServiceReque
           name="technicalResponsible"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Technical Responsible</FormLabel>
-              <Input {...field} placeholder="Name of the responsible technician" />
+              <FormLabel>Technical responsible</FormLabel>
+              <Input {...field} placeholder="Name of the responsible person" />
             </FormItem>
           )}
         />

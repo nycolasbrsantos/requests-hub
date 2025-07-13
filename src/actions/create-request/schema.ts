@@ -18,7 +18,7 @@ export const createRequestSchema = z.object({
       }),
       z.instanceof(File)
     ])
-  ).max(5).optional(),
+  ).max(5, 'You can attach up to 5 files.').optional(),
 
   // Product
   productName: z.string().min(2, 'Enter the product name.').optional(),
@@ -31,7 +31,7 @@ export const createRequestSchema = z.object({
   company: z.string().min(2, 'Enter the provider company.').optional(),
   scheduledDate: z.string().optional(),
   technicalResponsible: z.string().optional(),
-  budgets: z.array(z.any()).max(5).optional(),
+  budgets: z.array(z.any()).max(5, 'You can attach up to 5 budgets.').optional(),
 
   // Maintenance
   location: z.string().min(2, 'Enter the location.').optional(),

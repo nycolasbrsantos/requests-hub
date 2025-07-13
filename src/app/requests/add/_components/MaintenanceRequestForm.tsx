@@ -193,7 +193,7 @@ export function MaintenanceRequestForm({ requesterName, setIsLoading }: Maintena
                   render={({ field }) => (
                     <FormItem className="relative w-full">
                       <FormLabel htmlFor="location" className={form.formState.errors.location ? 'text-destructive' : ''}>Location</FormLabel>
-                      <Input id="location" placeholder="Ex: Room 101" {...field} className="w-full text-base" />
+                      <Input id="location" placeholder="e.g. Room 101" {...field} className="w-full text-base" />
                     </FormItem>
                   )}
                 />
@@ -202,8 +202,8 @@ export function MaintenanceRequestForm({ requesterName, setIsLoading }: Maintena
                   name="maintenanceType"
                   render={({ field }) => (
                     <FormItem className="relative w-full">
-                      <FormLabel htmlFor="maintenanceType" className={form.formState.errors.maintenanceType ? 'text-destructive' : ''}>Maintenance Type</FormLabel>
-                      <Input id="maintenanceType" placeholder="Ex: Electrical, Plumbing..." {...field} className="w-full text-base" />
+                      <FormLabel htmlFor="maintenanceType" className={form.formState.errors.maintenanceType ? 'text-destructive' : ''}>Maintenance type</FormLabel>
+                      <Input id="maintenanceType" placeholder="e.g. Electrical, Plumbing..." {...field} className="w-full text-base" />
                     </FormItem>
                   )}
                 />
@@ -222,7 +222,7 @@ export function MaintenanceRequestForm({ requesterName, setIsLoading }: Maintena
                             <Info className="w-4 h-4 text-muted-foreground cursor-pointer ml-1" aria-label="Help about priority" />
                           </TooltipTrigger>
                           <TooltipContent side="top" className="max-w-xs text-sm">
-                            Define the priority of the request to help with the service. High = urgent.
+                            Set the priority of the request to help with fulfillment. High = urgent.
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
