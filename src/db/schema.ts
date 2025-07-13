@@ -12,9 +12,9 @@ import {
 // Enum para os tipos de requisição, para garantir consistência
 export const requestTypeEnum = pgEnum('request_type', [
   'purchase',
+  'service',
   'maintenance',
-  'it_ticket',
-])
+]);
 
 // Enum para o status das requisições
 export const requestStatusEnum = pgEnum('request_status', [
@@ -129,15 +129,6 @@ export const maintenanceRequests = pgTable('maintenance_requests', {
   location: varchar('location', { length: 256 }),
   maintenanceType: varchar('maintenance_type', { length: 256 }),
   priority: requestPriorityEnum('priority'),
-});
-
-// Tabela filha para requisições de suporte de T.I.
-export const itSupportRequests = pgTable('it_support_requests', {
-  id: serial('id').primaryKey(),
-  requestId: integer('request_id').notNull().references(() => requests.id),
-  issueTitle: varchar('issue_title', { length: 256 }),
-  urgency: requestPriorityEnum('urgency'),
-  // Adicione outros campos específicos conforme necessário
 });
 
 // Notifications table

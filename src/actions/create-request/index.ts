@@ -17,7 +17,7 @@ import { createNotification } from '@/lib/notifications';
 const handler = async ({
   parsedInput,
 }: {
-  parsedInput: z.infer<typeof createRequestSchema>
+  parsedInput: ReturnType<typeof createRequestSchema.parse>
 }) => {
   try {
     // Gera a data AAAAMMDD
@@ -27,19 +27,30 @@ const handler = async ({
     const d = String(now.getDate()).padStart(2, '0');
     const dateStr = `${y}${m}${d}`;
 
-    // Conta quantas requisições já existem para o dia
+    // Define prefixo conforme o tipo
+    let prefix = 'PR';
+    if (parsedInput.type === 'service') prefix = 'SR';
+    if (parsedInput.type === 'maintenance') prefix = 'MR';
+
+    // Conta quantas requisições já existem para o dia e tipo
     const start = new Date(y, now.getMonth(), now.getDate(), 0, 0, 0, 0);
     const end = new Date(y, now.getMonth(), now.getDate(), 23, 59, 59, 999);
     const requestsToday = await db
       .select()
       .from(requests)
-      .where(and(gte(requests.createdAt, start), lte(requests.createdAt, end)));
+      .where(
+        and(
+          gte(requests.createdAt, start),
+          lte(requests.createdAt, end),
+          eq(requests.type, parsedInput.type)
+        )
+      );
     const seq = String(requestsToday.length + 1).padStart(3, '0');
-    const customId = `${dateStr}-${seq}`;
+    const customId = `${prefix}-${dateStr}-${seq}`;
 
     // Criação da subpasta no Google Drive
-    const rootFolderId = getRootFolderIdByType(parsedInput.type as 'purchase' | 'it_support' | 'maintenance');
-    const driveFolderId = await createFolder(`REQ-${customId}`, rootFolderId);
+    const rootFolderId = getRootFolderIdByType(parsedInput.type as 'product' | 'service' | 'maintenance');
+    const driveFolderId = await createFolder(`${customId}`, rootFolderId);
 
     // Geração e upload do PDF detalhado da requisição
     const pdfBuffer = await generatePRPdf({
@@ -57,7 +68,7 @@ const handler = async ({
       statusHistory: [],
       attachments: [],
     });
-    const pdfFileName = `Requisicao-${customId}.pdf`;
+    const pdfFileName = `Request-${customId}.pdf`;
     const pdfFile = await uploadFileToFolder(
       pdfBuffer,
       pdfFileName,
@@ -98,16 +109,24 @@ const handler = async ({
     // Filtrar apenas objetos válidos para o banco
     const validAttachments = uploadedAttachments.filter(att => att && typeof att === 'object' && 'id' in att && 'name' in att);
 
+    // Monta objeto para inserção
+    const insertData: any = {
+      ...parsedInput,
+      customId,
+      attachments: validAttachments,
+      driveFolderId,
+      unitPriceInCents: parsedInput.unitPriceInCents ? reaisToCentavos(parsedInput.unitPriceInCents) : undefined,
+    };
+
+    // Não gerar poNumber para maintenance
+    if (parsedInput.type === 'maintenance') {
+      insertData.poNumber = null;
+    }
+
     // Agora sim, inserir a requisição no banco
     const [newRequest] = await db
       .insert(requests)
-      .values({
-        ...parsedInput,
-        customId,
-        attachments: validAttachments,
-        driveFolderId,
-        unitPriceInCents: parsedInput.unitPriceInCents ? reaisToCentavos(parsedInput.unitPriceInCents) : undefined,
-      })
+      .values(insertData)
       .returning();
 
     // Notificar usuário solicitante que a requisição foi criada
@@ -127,7 +146,7 @@ const handler = async ({
 
     // Inserir na tabela filha conforme o tipo
     if (newRequest) {
-      if (newRequest.type === 'purchase') {
+      if (newRequest.type === 'product') {
         await db.insert(purchaseRequests).values({
           requestId: newRequest.id,
           productName: parsedInput.productName,
@@ -140,25 +159,24 @@ const handler = async ({
         await db.insert(maintenanceRequests).values({
           requestId: newRequest.id,
           location: parsedInput.location,
+          maintenanceType: parsedInput.maintenanceType,
           priority: parsedInput.priority,
         });
-      } else if (["it_support", "it_ticket"].includes(newRequest.type as string)) {
-        await db.insert(itSupportRequests).values({
-          requestId: newRequest.id,
-        });
+      } else if (newRequest.type === 'service') {
+        // Aqui você pode criar uma tabela filha para serviços se desejar, ou apenas manter na principal
       }
     }
 
     revalidatePath('/requests');
 
     return {
-      success: `Requisição ${newRequest.customId} criada com sucesso!`,
+      success: `Request ${newRequest.customId} created successfully!`,
       id: newRequest.id,
     };
   } catch (error) {
-    console.error('Erro detalhado ao criar requisição:', error);
+    console.error('Detailed error on request creation:', error);
     return {
-      error: 'Ocorreu um erro no servidor. Não foi possível criar a requisição.',
+      error: 'A server error occurred. Could not create the request.',
       details: String(error),
     };
   }
