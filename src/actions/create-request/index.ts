@@ -110,6 +110,17 @@ const handler = async ({
       unitPriceInCents: parsedInput.unitPriceInCents ? reaisToCentavos(parsedInput.unitPriceInCents) : undefined,
     };
 
+    // Ensure 'title' is never null (required by DB)
+    if (!insertData.title) {
+      if (parsedInput.type === 'purchase') {
+        insertData.title = parsedInput.productName || 'Purchase Request';
+      } else if (parsedInput.type === 'service') {
+        insertData.title = parsedInput.serviceDescription || 'Service Request';
+      } else {
+        insertData.title = 'Request';
+      }
+    }
+
     // Não gerar poNumber para maintenance
     if (parsedInput.type === 'maintenance') {
       insertData.poNumber = null;
