@@ -21,8 +21,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
 const REQUEST_TYPES = [
-  { value: "product", label: "Produto" },
-  { value: "service", label: "Serviço" },
+  { value: "purchase", label: "Product" },
+  { value: "service", label: "Service" },
+  { value: "maintenance", label: "Maintenance" },
 ] as const;
 
 interface CreateRequestFormProps {
@@ -150,10 +151,10 @@ export function CreateRequestForm({ requesterName, isLoading, setIsLoading }: Cr
           name="type"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Tipo de requisição</FormLabel>
+              <FormLabel>Request type</FormLabel>
               <Select onValueChange={field.onChange} value={field.value} disabled={isLoading}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecione o tipo" />
+                  <SelectValue placeholder="Select the type" />
                 </SelectTrigger>
                 <SelectContent>
                   {REQUEST_TYPES.map((t) => (
@@ -170,9 +171,9 @@ export function CreateRequestForm({ requesterName, isLoading, setIsLoading }: Cr
           name="title"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Título</FormLabel>
+              <FormLabel>Title</FormLabel>
               <FormControl>
-                <Input {...field} placeholder="Título da requisição" disabled={isLoading} />
+                <Input {...field} placeholder="Request title" disabled={isLoading} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -183,31 +184,31 @@ export function CreateRequestForm({ requesterName, isLoading, setIsLoading }: Cr
           name="priority"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Prioridade</FormLabel>
+              <FormLabel>Priority</FormLabel>
               <Select onValueChange={field.onChange} value={field.value} disabled={isLoading}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecione a prioridade" />
+                  <SelectValue placeholder="Select priority" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="low">Baixa</SelectItem>
-                  <SelectItem value="medium">Média</SelectItem>
-                  <SelectItem value="high">Alta</SelectItem>
+                  <SelectItem value="low">Low</SelectItem>
+                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="high">High</SelectItem>
                 </SelectContent>
               </Select>
               <FormMessage />
             </FormItem>
           )}
         />
-        {type === "product" && (
+        {type === "purchase" && (
           <>
             <FormField
               control={form.control}
               name="productName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Nome do produto</FormLabel>
+                  <FormLabel>Product name</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="Ex: Impressora HP" disabled={isLoading} />
+                    <Input {...field} placeholder="e.g. HP Printer" disabled={isLoading} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -219,7 +220,7 @@ export function CreateRequestForm({ requesterName, isLoading, setIsLoading }: Cr
                 name="quantity"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Quantidade</FormLabel>
+                    <FormLabel>Quantity</FormLabel>
                     <FormControl>
                       <Input type="number" min={1} {...field} placeholder="1" disabled={isLoading} />
                     </FormControl>
@@ -232,9 +233,9 @@ export function CreateRequestForm({ requesterName, isLoading, setIsLoading }: Cr
                 name="unitPriceInCents"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Valor unitário (centavos)</FormLabel>
+                    <FormLabel>Unit price (cents)</FormLabel>
                     <FormControl>
-                      <Input type="number" min={1} {...field} placeholder="Ex: 10000" disabled={isLoading} />
+                      <Input type="number" min={1} {...field} placeholder="e.g. 10000" disabled={isLoading} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -246,9 +247,9 @@ export function CreateRequestForm({ requesterName, isLoading, setIsLoading }: Cr
               name="supplier"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Fornecedor</FormLabel>
+                  <FormLabel>Supplier</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="Ex: Papelaria Central" disabled={isLoading} />
+                    <Input {...field} placeholder="e.g. Central Stationery" disabled={isLoading} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -263,9 +264,9 @@ export function CreateRequestForm({ requesterName, isLoading, setIsLoading }: Cr
               name="serviceDescription"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Descrição do serviço</FormLabel>
+                  <FormLabel>Service description</FormLabel>
                   <FormControl>
-                    <Textarea {...field} placeholder="Descreva o serviço a ser executado" disabled={isLoading} />
+                    <Textarea {...field} placeholder="Describe the service to be performed" disabled={isLoading} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -276,9 +277,9 @@ export function CreateRequestForm({ requesterName, isLoading, setIsLoading }: Cr
               name="company"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Empresa executora</FormLabel>
+                  <FormLabel>Provider company</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="Ex: Manutenções ABC Ltda" disabled={isLoading} />
+                    <Input {...field} placeholder="e.g. ABC Maintenance Ltd." disabled={isLoading} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -289,7 +290,7 @@ export function CreateRequestForm({ requesterName, isLoading, setIsLoading }: Cr
               name="scheduledDate"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Data prevista de execução</FormLabel>
+                  <FormLabel>Scheduled date</FormLabel>
                   <FormControl>
                     <Input type="date" {...field} disabled={isLoading} />
                   </FormControl>
@@ -302,17 +303,17 @@ export function CreateRequestForm({ requesterName, isLoading, setIsLoading }: Cr
               name="technicalResponsible"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Responsável técnico (opcional)</FormLabel>
+                  <FormLabel>Technical responsible (optional)</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="Nome do responsável técnico" disabled={isLoading} />
+                    <Input {...field} placeholder="Name of the technical responsible" disabled={isLoading} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            {/* Upload de orçamentos */}
+            {/* Budgets upload */}
             <div>
-              <label className="block text-sm font-medium mb-1">Orçamentos (PDF, até 5 arquivos)</label>
+              <label className="block text-sm font-medium mb-1">Budgets (PDF, up to 5 files)</label>
               <input
                 type="file"
                 accept="application/pdf"
@@ -334,15 +335,45 @@ export function CreateRequestForm({ requesterName, isLoading, setIsLoading }: Cr
             </div>
           </>
         )}
+        {type === "maintenance" && (
+          <>
+            <FormField
+              control={form.control}
+              name="location"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Location</FormLabel>
+                  <FormControl>
+                    <Input {...field} placeholder="e.g. Room 0_34" disabled={isLoading} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="maintenanceType"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Maintenance type</FormLabel>
+                  <FormControl>
+                    <Input {...field} placeholder="e.g. Door repair" disabled={isLoading} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </>
+        )}
         {/* Campo comum: descrição */}
         <FormField
           control={form.control}
           name="description"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Descrição detalhada (opcional)</FormLabel>
+              <FormLabel>Detailed description (optional)</FormLabel>
               <FormControl>
-                <Textarea {...field} placeholder="Detalhe a necessidade, contexto ou observações" disabled={isLoading} />
+                <Textarea {...field} placeholder="Add context, details or observations" disabled={isLoading} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -350,7 +381,7 @@ export function CreateRequestForm({ requesterName, isLoading, setIsLoading }: Cr
         />
         {/* Upload de anexos */}
         <div>
-          <label className="block text-sm font-medium mb-1">Anexos (PDF, imagens, até 5 arquivos)</label>
+          <label className="block text-sm font-medium mb-1">Attachments (PDF, images, up to 5 files)</label>
           <input
             type="file"
             accept="application/pdf,image/*"
@@ -371,7 +402,7 @@ export function CreateRequestForm({ requesterName, isLoading, setIsLoading }: Cr
           )}
         </div>
         <Button type="submit" disabled={isLoading || form.formState.isSubmitting} className="w-full">
-          {isLoading ? "Enviando..." : "Criar requisição"}
+          {isLoading ? "Submitting..." : "Create request"}
         </Button>
       </form>
     </Form>
