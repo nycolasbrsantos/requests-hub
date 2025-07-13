@@ -1,5 +1,3 @@
-"use server"
-
 import { revalidatePath } from 'next/cache'
 import { db } from '@/db'
 import { requests } from '@/db/schema'
@@ -24,7 +22,18 @@ const handler = async ({ parsedInput }: { parsedInput: {
 } }) => {
   try {
     const { customId, status, changedBy, comment, poNumber } = parsedInput
-    const [request] = await db.select().from(requests).where(eq(requests.customId, customId))
+    
+    let request;
+    try {
+      [request] = await db.select().from(requests).where(eq(requests.customId, customId));
+      if (!request) {
+        return { error: 'Requisição não encontrada.' };
+      }
+    } catch (error) {
+      console.error('Erro ao buscar requisição no banco de dados:', error);
+      return { error: 'Erro ao buscar requisição. Por favor, tente novamente.' };
+    }
+
     const prevHistory = Array.isArray(request?.statusHistory) ? request.statusHistory : []
     const newHistory = [
       ...prevHistory,
@@ -76,14 +85,20 @@ const handler = async ({ parsedInput }: { parsedInput: {
       updateData.executedBy = changedBy || 'Desconhecido'
     }
 
-    const [updatedRequest] = await db
-      .update(requests)
-      .set(updateData)
-      .where(eq(requests.customId, customId))
-      .returning()
+    let updatedRequest;
+    try {
+      [updatedRequest] = await db
+        .update(requests)
+        .set(updateData)
+        .where(eq(requests.customId, customId))
+        .returning();
 
-    if (!updatedRequest) {
-      return { error: 'Requisição não encontrada.' }
+      if (!updatedRequest) {
+        return { error: 'Requisição não encontrada após atualização.' };
+      }
+    } catch (error) {
+      console.error('Erro ao atualizar requisição no banco de dados:', error);
+      return { error: 'Erro ao atualizar requisição. Por favor, tente novamente.' };
     }
 
     // Criar estrutura de pastas para PO no Google Drive se necessário
@@ -138,8 +153,8 @@ const handler = async ({ parsedInput }: { parsedInput: {
             .where(eq(requests.customId, customId));
         }
       } catch (error) {
-        console.error('Erro ao criar estrutura de pastas da PO:', error);
-        // Não falhar a operação se der erro no Google Drive
+        console.error('Erro ao criar estrutura de pastas da PO ou gerar PDF:', error);
+        // Não falhar a operação se der erro no Google Drive, mas registrar o erro
       }
     }
 
@@ -150,152 +165,174 @@ const handler = async ({ parsedInput }: { parsedInput: {
       if (requestAfterUpdate && requestAfterUpdate.driveFolderId) {
         let prPdfFile = null;
         let mergedPdfFile = null;
-        // Gerar PDF final da PR (modelo PR)
-        if (!requestAfterUpdate.poNumber) {
-          const prPdfBuffer = await generatePRPdf({
-            customId: requestAfterUpdate.customId ?? '',
-            createdAt: requestAfterUpdate.createdAt?.toISOString?.() ?? (typeof requestAfterUpdate.createdAt === 'string' ? requestAfterUpdate.createdAt : ''),
-            requesterName: requestAfterUpdate.requesterName ?? '',
-            status: requestAfterUpdate.status ?? '',
-            productName: requestAfterUpdate.productName ?? undefined,
-            quantity: requestAfterUpdate.quantity ?? undefined,
-            unitPriceInCents: requestAfterUpdate.unitPriceInCents ? String(requestAfterUpdate.unitPriceInCents) : undefined,
-            supplier: requestAfterUpdate.supplier ?? undefined,
-            priority: requestAfterUpdate.priority ?? undefined,
-            description: requestAfterUpdate.description ?? undefined,
-            needApprovedBy: requestAfterUpdate.needApprovedBy ?? undefined,
-            statusHistory: Array.isArray(requestAfterUpdate.statusHistory) ? requestAfterUpdate.statusHistory : [],
-            attachments: Array.isArray(requestAfterUpdate.attachments) ? requestAfterUpdate.attachments : [],
-          });
-          const prPdfFileName = `Requisicao-${requestAfterUpdate.customId}.pdf`;
-          prPdfFile = await uploadFileToFolder(
-            prPdfBuffer,
-            prPdfFileName,
-            'application/pdf',
-            requestAfterUpdate.driveFolderId
-          );
-        }
-        // Gerar PDF final da PO concluída (se for uma PO)
-        let poFolderIdFinal = poFolderId;
-        if (requestAfterUpdate.poNumber) {
-          // Garante que a subpasta da PO existe
-          if (!poFolderIdFinal) {
-            poFolderIdFinal = await organizePOFiles(requestAfterUpdate.driveFolderId, requestAfterUpdate.poNumber, []);
+        try {
+          // Gerar PDF final da PR (modelo PR)
+          if (!requestAfterUpdate.poNumber) {
+            const prPdfBuffer = await generatePRPdf({
+              customId: requestAfterUpdate.customId ?? '',
+              createdAt: requestAfterUpdate.createdAt?.toISOString?.() ?? (typeof requestAfterUpdate.createdAt === 'string' ? requestAfterUpdate.createdAt : ''),
+              requesterName: requestAfterUpdate.requesterName ?? '',
+              status: requestAfterUpdate.status ?? '',
+              productName: requestAfterUpdate.productName ?? undefined,
+              quantity: requestAfterUpdate.quantity ?? undefined,
+              unitPriceInCents: requestAfterUpdate.unitPriceInCents ? String(requestAfterUpdate.unitPriceInCents) : undefined,
+              supplier: requestAfterUpdate.supplier ?? undefined,
+              priority: requestAfterUpdate.priority ?? undefined,
+              description: requestAfterUpdate.description ?? undefined,
+              needApprovedBy: requestAfterUpdate.needApprovedBy ?? undefined,
+              statusHistory: Array.isArray(requestAfterUpdate.statusHistory) ? requestAfterUpdate.statusHistory : [],
+              attachments: Array.isArray(requestAfterUpdate.attachments) ? requestAfterUpdate.attachments : [],
+            });
+            const prPdfFileName = `Requisicao-${requestAfterUpdate.customId}.pdf`;
+            prPdfFile = await uploadFileToFolder(
+              prPdfBuffer,
+              prPdfFileName,
+              'application/pdf',
+              requestAfterUpdate.driveFolderId
+            );
           }
-          const poPdfBuffer = await generatePOPdf({
-            customId: requestAfterUpdate.customId ?? '',
-            poNumber: requestAfterUpdate.poNumber || undefined,
-            createdAt: requestAfterUpdate.createdAt?.toISOString?.() ?? (typeof requestAfterUpdate.createdAt === 'string' ? requestAfterUpdate.createdAt : ''),
-            requesterName: requestAfterUpdate.requesterName ?? '',
-            status: requestAfterUpdate.status ?? '',
-            productName: requestAfterUpdate.productName ?? undefined,
-            quantity: requestAfterUpdate.quantity ?? undefined,
-            unitPriceInCents: requestAfterUpdate.unitPriceInCents ? String(requestAfterUpdate.unitPriceInCents) : undefined,
-            supplier: requestAfterUpdate.supplier ?? undefined,
-            priority: requestAfterUpdate.priority ?? undefined,
-            description: requestAfterUpdate.description ?? undefined,
-            needApprovedBy: requestAfterUpdate.needApprovedBy ?? undefined,
-            financeApprovedBy: requestAfterUpdate.financeApprovedBy ?? undefined,
-            executedBy: requestAfterUpdate.executedBy ?? undefined,
-            statusHistory: Array.isArray(requestAfterUpdate.statusHistory) ? requestAfterUpdate.statusHistory : [],
-            attachments: Array.isArray(requestAfterUpdate.attachments) ? requestAfterUpdate.attachments : [],
-          }, true); // true = PO concluída
+          // Gerar PDF final da PO concluída (se for uma PO)
+          let poFolderIdFinal = poFolderId;
+          if (requestAfterUpdate.poNumber) {
+            // Garante que a subpasta da PO existe
+            if (!poFolderIdFinal) {
+              poFolderIdFinal = await organizePOFiles(requestAfterUpdate.driveFolderId, requestAfterUpdate.poNumber, []);
+            }
+            const poPdfBuffer = await generatePOPdf({
+              customId: requestAfterUpdate.customId ?? '',
+              poNumber: requestAfterUpdate.poNumber || undefined,
+              createdAt: requestAfterUpdate.createdAt?.toISOString?.() ?? (typeof requestAfterUpdate.createdAt === 'string' ? requestAfterUpdate.createdAt : ''),
+              requesterName: requestAfterUpdate.requesterName ?? '',
+              status: requestAfterUpdate.status ?? '',
+              productName: requestAfterUpdate.productName ?? undefined,
+              quantity: requestAfterUpdate.quantity ?? undefined,
+              unitPriceInCents: requestAfterUpdate.unitPriceInCents ? String(requestAfterUpdate.unitPriceInCents) : undefined,
+              supplier: requestAfterUpdate.supplier ?? undefined,
+              priority: requestAfterUpdate.priority ?? undefined,
+              description: requestAfterUpdate.description ?? undefined,
+              needApprovedBy: requestAfterUpdate.needApprovedBy ?? undefined,
+              financeApprovedBy: requestAfterUpdate.financeApprovedBy ?? undefined,
+              executedBy: requestAfterUpdate.executedBy ?? undefined,
+              statusHistory: Array.isArray(requestAfterUpdate.statusHistory) ? requestAfterUpdate.statusHistory : [],
+              attachments: Array.isArray(requestAfterUpdate.attachments) ? requestAfterUpdate.attachments : [],
+            }, true); // true = PO concluída
 
-          // Se houver comprovante de compra, mesclar com o PDF da PO
-          let mergedBuffer = poPdfBuffer;
-          const deliveryProofs = Array.isArray(requestAfterUpdate.deliveryProof) ? requestAfterUpdate.deliveryProof : [];
-          const pdfProof = deliveryProofs.find(att => att.name && att.name.toLowerCase().endsWith('.pdf') && att.id);
-          if (pdfProof && pdfProof.id) {
-            const proofBuffer = await getFileBufferFromDrive(pdfProof.id);
-            // Mesclar usando pdfjs
-            const pdfjs = await import('pdfjs');
-            const { Document } = pdfjs;
-            const { default: ExternalDocument } = await import('pdfjs/lib/external');
-            const doc = new Document();
-            const poExt = new ExternalDocument(poPdfBuffer);
-            const proofExt = new ExternalDocument(proofBuffer);
-            doc.addPagesOf(poExt);
-            doc.addPagesOf(proofExt);
-            mergedBuffer = await doc.asBuffer();
+            // Se houver comprovante de compra, mesclar com o PDF da PO
+            let mergedBuffer = poPdfBuffer;
+            const deliveryProofs = Array.isArray(requestAfterUpdate.deliveryProof) ? requestAfterUpdate.deliveryProof : [];
+            const pdfProof = deliveryProofs.find(att => att.name && att.name.toLowerCase().endsWith('.pdf') && att.id);
+            if (pdfProof && pdfProof.id) {
+              try {
+                const proofBuffer = await getFileBufferFromDrive(pdfProof.id);
+                // Mesclar usando pdfjs
+                const pdfjs = await import('pdfjs');
+                const { Document } = pdfjs;
+                const { default: ExternalDocument } = await import('pdfjs/lib/external');
+                const doc = new Document();
+                const poExt = new ExternalDocument(poPdfBuffer);
+                const proofExt = new ExternalDocument(proofBuffer);
+                doc.addPagesOf(poExt);
+                doc.addPagesOf(proofExt);
+                mergedBuffer = await doc.asBuffer();
+              } catch (mergeError) {
+                console.warn('Erro ao mesclar PDFs:', mergeError);
+                // Continua sem mesclar se houver erro
+              }
+            }
+            const mergedPdfFileName = `${requestAfterUpdate.poNumber}-completed.pdf`;
+            mergedPdfFile = await uploadFileToFolder(
+              mergedBuffer,
+              mergedPdfFileName,
+              'application/pdf',
+              poFolderIdFinal || requestAfterUpdate.driveFolderId
+            );
           }
-          const mergedPdfFileName = `${requestAfterUpdate.poNumber}-completed.pdf`;
-          mergedPdfFile = await uploadFileToFolder(
-            mergedBuffer,
-            mergedPdfFileName,
-            'application/pdf',
-            poFolderIdFinal || requestAfterUpdate.driveFolderId
-          );
+          // Atualiza os attachments para incluir os novos PDFs
+          const updatedAttachments = [
+            ...((Array.isArray(requestAfterUpdate.attachments) ? requestAfterUpdate.attachments : []).map(att => ({
+              id: att.id ?? '',
+              name: att.name ?? '',
+              webViewLink: att.webViewLink ?? undefined,
+            }))),
+          ];
+          if (prPdfFile) {
+            updatedAttachments.push({
+              id: prPdfFile.id ?? '',
+              name: prPdfFile.name ?? '',
+              webViewLink: prPdfFile.webViewLink ?? undefined
+            });
+          }
+          if (mergedPdfFile) {
+            updatedAttachments.push({ 
+              id: mergedPdfFile.id ?? '', 
+              name: mergedPdfFile.name ?? '', 
+              webViewLink: mergedPdfFile.webViewLink ?? undefined 
+            });
+          }
+          await db.update(requests)
+            .set({ attachments: updatedAttachments })
+            .where(eq(requests.customId, customId));
+        } catch (pdfError) {
+          console.error('Erro ao gerar ou fazer upload de PDFs de conclusão:', pdfError);
+          // Não falhar a operação se der erro na geração/upload de PDFs
         }
-        // Atualiza os attachments para incluir os novos PDFs
-        const updatedAttachments = [
-          ...((Array.isArray(requestAfterUpdate.attachments) ? requestAfterUpdate.attachments : []).map(att => ({
-            id: att.id ?? '',
-            name: att.name ?? '',
-            webViewLink: att.webViewLink ?? undefined,
-          }))),
-        ];
-        if (prPdfFile) {
-          updatedAttachments.push({
-            id: prPdfFile.id ?? '',
-            name: prPdfFile.name ?? '',
-            webViewLink: prPdfFile.webViewLink ?? undefined
-          });
-        }
-        if (mergedPdfFile) {
-          updatedAttachments.push({ 
-            id: mergedPdfFile.id ?? '', 
-            name: mergedPdfFile.name ?? '', 
-            webViewLink: mergedPdfFile.webViewLink ?? undefined 
-          });
-        }
-        await db.update(requests)
-          .set({ attachments: updatedAttachments })
-          .where(eq(requests.customId, customId));
       }
     }
 
     // Se for awaiting_delivery ou completed, atualizar anexos com comprovante
     if ((status === 'awaiting_delivery' || status === 'completed') && Array.isArray(parsedInput.deliveryProof) && parsedInput.deliveryProof.length > 0) {
-      const [requestForProof] = await db.select().from(requests).where(eq(requests.customId, customId));
-      if (requestForProof) {
-        const updatedAttachments = [
-          ...((Array.isArray(requestForProof.attachments) ? requestForProof.attachments : []).map(att => ({
-            id: att.id ?? '',
-            name: att.name ?? '',
-            webViewLink: att.webViewLink ?? undefined,
-          }))),
-          ...parsedInput.deliveryProof,
-        ];
-        await db.update(requests)
-          .set({ attachments: updatedAttachments })
-          .where(eq(requests.customId, customId));
+      try {
+        const [requestForProof] = await db.select().from(requests).where(eq(requests.customId, customId));
+        if (requestForProof) {
+          const updatedAttachments = [
+            ...((Array.isArray(requestForProof.attachments) ? requestForProof.attachments : []).map(att => ({
+              id: att.id ?? '',
+              name: att.name ?? '',
+              webViewLink: att.webViewLink ?? undefined,
+            }))),
+            ...parsedInput.deliveryProof,
+          ];
+          await db.update(requests)
+            .set({ attachments: updatedAttachments })
+            .where(eq(requests.customId, customId));
+        }
+      } catch (attachmentError) {
+        console.warn('Erro ao atualizar anexos com comprovante de entrega:', attachmentError);
+        // Não impede a atualização do status, mas registra o erro
       }
     }
 
     // Notificar usuário se status for 'awaiting_delivery'
     if (status === 'awaiting_delivery') {
-      // Buscar usuário pelo nome do solicitante
-      const requesterUser = await db.select().from(users).where(eq(users.name, updatedRequest.requesterName)).then(r => r[0]);
-      if (requesterUser) {
-        await createNotification({
-          userId: requesterUser.id,
-          title: 'Your purchase order is awaiting delivery',
-          body: `Your purchase order #${updatedRequest.customId} is now awaiting delivery. You will be notified when it is completed.`,
-          link: `/requests/${updatedRequest.customId}`,
-          type: 'in-app',
-          sendEmailNotification: true,
-        });
+      try {
+        // Buscar usuário pelo nome do solicitante
+        const requesterUser = await db.select().from(users).where(eq(users.name, updatedRequest.requesterName)).then(r => r[0]);
+        if (requesterUser) {
+          await createNotification({
+            userId: requesterUser.id,
+            title: 'Your purchase order is awaiting delivery',
+            body: `Your purchase order #${updatedRequest.customId} is now awaiting delivery. You will be notified when it is completed.`,
+            link: `/requests/${updatedRequest.customId}`,
+            type: 'in-app',
+            sendEmailNotification: true,
+          });
+        }
+      } catch (notificationError) {
+        console.warn('Erro ao enviar notificação de awaiting_delivery:', notificationError);
+        // Não impede a atualização do status, mas registra o erro
       }
     }
 
     revalidatePath('/requests')
     return { success: `Status da requisição #${customId} atualizado!` }
   } catch (error) {
-    console.error(error)
-    return { error: 'Ocorreu um erro ao atualizar o status.' }
+    console.error('Ocorreu um erro inesperado ao atualizar o status:', error)
+    return { error: 'Ocorreu um erro inesperado ao atualizar o status da requisição.' }
   }
 }
 
 export const updateRequestStatus = actionClient
   .inputSchema(updateRequestStatusSchema)
   .action(handler)
+
+

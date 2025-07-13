@@ -7,8 +7,14 @@ import fs from 'fs';
 const SCOPES = ['https://www.googleapis.com/auth/drive'];
 const KEYFILE = process.env.GOOGLE_SERVICE_ACCOUNT_KEYFILE || 'google-service-account.json';
 
+let cachedDriveClient: ReturnType<typeof google.drive> | null = null;
+
 // Função para obter cliente do Google Drive (se não existir)
 export async function getDriveClient() {
+  if (cachedDriveClient) {
+    return cachedDriveClient;
+  }
+
   const keyFilePath = path.join(process.cwd(), KEYFILE);
   const serviceAccount = JSON.parse(fs.readFileSync(keyFilePath, 'utf-8'));
   const auth = new JWT({
@@ -17,7 +23,8 @@ export async function getDriveClient() {
     scopes: SCOPES,
     subject: 'nsantos@biseagles.com', // delegação domain-wide
   });
-  return google.drive({ version: 'v3', auth });
+  cachedDriveClient = google.drive({ version: 'v3', auth });
+  return cachedDriveClient;
 }
 
 // Função para verificar se uma pasta existe
@@ -235,4 +242,5 @@ export async function getFileBufferFromDrive(fileId: string): Promise<Buffer> {
   }
   return Buffer.concat(chunks);
 } 
- 
+
+
