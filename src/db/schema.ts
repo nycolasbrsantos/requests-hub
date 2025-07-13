@@ -140,6 +140,18 @@ export const itSupportRequests = pgTable('it_support_requests', {
   // Adicione outros campos específicos conforme necessário
 });
 
+// Notifications table
+export const notifications = pgTable('notifications', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').notNull().references(() => users.id),
+  title: varchar('title', { length: 256 }).notNull(),
+  body: text('body').notNull(),
+  link: varchar('link', { length: 512 }),
+  type: varchar('type', { length: 32 }).notNull(), // 'in-app' | 'email'
+  read: integer('read').default(0).notNull(), // 0 = unread, 1 = read
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
 // Tipos TypeScript que o Drizzle infere do nosso schema.
 // Isso nos dá autocompletar e segurança de tipos em todo o código!
 export type Request = typeof requests.$inferSelect

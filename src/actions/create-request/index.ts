@@ -2,15 +2,16 @@
 
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
-import { and, gte, lte } from 'drizzle-orm'
+import { and, gte, lte, eq } from 'drizzle-orm'
 
 import { db } from '@/db'
-import { requests, purchaseRequests, maintenanceRequests, itSupportRequests } from '@/db/schema'
+import { requests, purchaseRequests, maintenanceRequests, itSupportRequests, users } from '@/db/schema'
 import { actionClient } from '@/lib/safe-actions'
 import { createRequestSchema } from './schema'
 import { uploadFileToFolder, getRootFolderIdByType, createFolder } from '@/lib/google-drive'
 import { reaisToCentavos } from '@/lib/utils'
 import { generatePRPdf } from '@/lib/generate-pr-pdf'
+import { createNotification } from '@/lib/notifications';
 
 // Se você quiser manter o handler separado:
 const handler = async ({
@@ -108,6 +109,21 @@ const handler = async ({
         unitPriceInCents: parsedInput.unitPriceInCents ? reaisToCentavos(parsedInput.unitPriceInCents) : undefined,
       })
       .returning();
+
+    // Notificar usuário solicitante que a requisição foi criada
+    if (newRequest) {
+      const requesterUser = await db.select().from(users).where(eq(users.name, newRequest.requesterName)).then(r => r[0]);
+      if (requesterUser) {
+        await createNotification({
+          userId: requesterUser.id,
+          title: 'Request submitted successfully',
+          body: `Hello,\n\nYour request has been successfully submitted.\n\nRequest Number: ${newRequest.customId}\n\nThank you for reaching out!\n\nBest regards,\nSupport Team`,
+          link: `/requests/${newRequest.customId}`,
+          type: 'in-app',
+          sendEmailNotification: true,
+        });
+      }
+    }
 
     // Inserir na tabela filha conforme o tipo
     if (newRequest) {

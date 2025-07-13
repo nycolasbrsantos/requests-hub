@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from '@/components/ui/sonner';
 import { AuthSessionProvider } from '@/components/SessionProvider';
+import { NotificationBell } from '@/components/ui/notification-bell';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -30,6 +31,9 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <AuthSessionProvider>
+          <div className="w-full flex justify-end items-center p-4">
+            <NotificationBell />
+          </div>
           {children}
           <Toaster />
         </AuthSessionProvider>

@@ -37,6 +37,7 @@ export const authOptions: NextAuthOptions = {
         const found = await db.select().from(users).where(eq(users.email, session.user.email));
         if (found.length > 0) {
           session.user.role = found[0].role;
+          session.user.id = found[0].id;
         }
       }
       return session;

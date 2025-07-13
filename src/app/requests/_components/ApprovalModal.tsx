@@ -39,9 +39,10 @@ export function ApprovalModal({
   const [trackingCode, setTrackingCode] = useState('');
   const [purchaseProof, setPurchaseProof] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [requestType, setRequestType] = useState<string>('');
 
   useEffect(() => {
-    async function fetchDriveFolderId() {
+    async function fetchDriveFolderIdAndType() {
       if (open && requestId) {
         try {
           const res = await fetch(`/api/request-drive-folder?customId=${requestId}`);
@@ -50,9 +51,18 @@ export function ApprovalModal({
         } catch {
           setDriveFolderId(null);
         }
+        // Buscar tipo da requisição
+        try {
+          const res = await fetch(`/api/requests/${requestId}`);
+          const data = await res.json();
+          setRequestType(data?.type || '');
+          if (data?.poNumber) setPoNumber(data.poNumber);
+        } catch {
+          setRequestType('');
+        }
       }
     }
-    fetchDriveFolderId();
+    fetchDriveFolderIdAndType();
   }, [open, requestId]);
 
   const { execute, isExecuting } = useAction(updateRequestStatus, {
@@ -153,27 +163,29 @@ export function ApprovalModal({
       toast.error('Comentário é obrigatório');
       return;
     }
-    if (!purchaseProof) {
-      toast.error('Comprovante de compra (PDF) é obrigatório');
+    if (requestType === 'purchase' && !purchaseProof) {
+      toast.error('Comprovante de compra (PDF) é obrigatório para compras');
       return;
     }
     let uploadedProof = null;
     try {
-      const formData = new FormData();
-      formData.append('file', purchaseProof);
-      formData.append('uploadedBy', userName);
-      formData.append('poNumber', poNumber || '');
-      const uploadRes = await fetch(`/api/requests/${requestId}/po-upload`, {
-        method: 'POST',
-        body: formData,
-      });
-      const uploadData = await uploadRes.json();
-      if (!uploadData.success || !uploadData.file) {
-        toast.error('Falha ao enviar comprovante de compra');
-        return;
+      if (requestType === 'purchase' && purchaseProof) {
+        const formData = new FormData();
+        formData.append('file', purchaseProof);
+        formData.append('uploadedBy', userName);
+        formData.append('poNumber', poNumber || '');
+        const uploadRes = await fetch(`/api/requests/${requestId}/po-upload`, {
+          method: 'POST',
+          body: formData,
+        });
+        const uploadData = await uploadRes.json();
+        if (!uploadData.success || !uploadData.file) {
+          toast.error('Falha ao enviar comprovante de compra');
+          return;
+        }
+        uploadedProof = uploadData.file;
       }
-      uploadedProof = uploadData.file;
-    } catch (err) {
+    } catch {
       toast.error('Erro ao enviar comprovante de compra');
       return;
     }
@@ -311,14 +323,18 @@ export function ApprovalModal({
           {/* Campos adicionais para finalização */}
           {canComplete && (
             <div className="space-y-2">
-              <Label>Comprovante de compra (PDF)</Label>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="application/pdf"
-                onChange={e => setPurchaseProof(e.target.files?.[0] || null)}
-                className="block w-full border rounded px-2 py-1"
-              />
+              {requestType === 'purchase' && (
+                <>
+                  <Label>Comprovante de compra (PDF)</Label>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="application/pdf"
+                    onChange={e => setPurchaseProof(e.target.files?.[0] || null)}
+                    className="block w-full border rounded px-2 py-1"
+                  />
+                </>
+              )}
               <Label>Transportadora (opcional)</Label>
               <Input
                 value={carrier}

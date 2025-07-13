@@ -7,8 +7,10 @@ import { actionClient } from '@/lib/safe-actions'
 import { eq } from 'drizzle-orm'
 import { updateRequestStatusSchema } from './schema'
 import { generatePOPdf } from '@/lib/generate-po-pdf'
-import { uploadFileToFolder, organizePOFiles } from '@/lib/google-drive'
+import { uploadFileToFolder, organizePOFiles, getFileBufferFromDrive } from '@/lib/google-drive'
 import { generatePRPdf } from '@/lib/generate-pr-pdf'
+import { createNotification } from '@/lib/notifications';
+import { users } from '@/db/schema';
 
 const handler = async ({ parsedInput }: { parsedInput: {
   customId: string;
@@ -147,6 +149,7 @@ const handler = async ({ parsedInput }: { parsedInput: {
       const [requestAfterUpdate] = await db.select().from(requests).where(eq(requests.customId, customId));
       if (requestAfterUpdate && requestAfterUpdate.driveFolderId) {
         let prPdfFile = null;
+        let mergedPdfFile = null;
         // Gerar PDF final da PR (modelo PR)
         if (!requestAfterUpdate.poNumber) {
           const prPdfBuffer = await generatePRPdf({
@@ -173,7 +176,6 @@ const handler = async ({ parsedInput }: { parsedInput: {
           );
         }
         // Gerar PDF final da PO concluída (se for uma PO)
-        let poPdfFile = null;
         let poFolderIdFinal = poFolderId;
         if (requestAfterUpdate.poNumber) {
           // Garante que a subpasta da PO existe
@@ -198,11 +200,28 @@ const handler = async ({ parsedInput }: { parsedInput: {
             statusHistory: Array.isArray(requestAfterUpdate.statusHistory) ? requestAfterUpdate.statusHistory : [],
             attachments: Array.isArray(requestAfterUpdate.attachments) ? requestAfterUpdate.attachments : [],
           }, true); // true = PO concluída
-          
-          const poPdfFileName = `PO-${requestAfterUpdate.poNumber}-concluida.pdf`;
-          poPdfFile = await uploadFileToFolder(
-            poPdfBuffer,
-            poPdfFileName,
+
+          // Se houver comprovante de compra, mesclar com o PDF da PO
+          let mergedBuffer = poPdfBuffer;
+          const deliveryProofs = Array.isArray(requestAfterUpdate.deliveryProof) ? requestAfterUpdate.deliveryProof : [];
+          const pdfProof = deliveryProofs.find(att => att.name && att.name.toLowerCase().endsWith('.pdf') && att.id);
+          if (pdfProof && pdfProof.id) {
+            const proofBuffer = await getFileBufferFromDrive(pdfProof.id);
+            // Mesclar usando pdfjs
+            const pdfjs = await import('pdfjs');
+            const { Document } = pdfjs;
+            const { default: ExternalDocument } = await import('pdfjs/lib/external');
+            const doc = new Document();
+            const poExt = new ExternalDocument(poPdfBuffer);
+            const proofExt = new ExternalDocument(proofBuffer);
+            doc.addPagesOf(poExt);
+            doc.addPagesOf(proofExt);
+            mergedBuffer = await doc.asBuffer();
+          }
+          const mergedPdfFileName = `${requestAfterUpdate.poNumber}-completed.pdf`;
+          mergedPdfFile = await uploadFileToFolder(
+            mergedBuffer,
+            mergedPdfFileName,
             'application/pdf',
             poFolderIdFinal || requestAfterUpdate.driveFolderId
           );
@@ -222,11 +241,11 @@ const handler = async ({ parsedInput }: { parsedInput: {
             webViewLink: prPdfFile.webViewLink ?? undefined
           });
         }
-        if (poPdfFile) {
+        if (mergedPdfFile) {
           updatedAttachments.push({ 
-            id: poPdfFile.id ?? '', 
-            name: poPdfFile.name ?? '', 
-            webViewLink: poPdfFile.webViewLink ?? undefined 
+            id: mergedPdfFile.id ?? '', 
+            name: mergedPdfFile.name ?? '', 
+            webViewLink: mergedPdfFile.webViewLink ?? undefined 
           });
         }
         await db.update(requests)
@@ -250,6 +269,22 @@ const handler = async ({ parsedInput }: { parsedInput: {
         await db.update(requests)
           .set({ attachments: updatedAttachments })
           .where(eq(requests.customId, customId));
+      }
+    }
+
+    // Notificar usuário se status for 'awaiting_delivery'
+    if (status === 'awaiting_delivery') {
+      // Buscar usuário pelo nome do solicitante
+      const requesterUser = await db.select().from(users).where(eq(users.name, updatedRequest.requesterName)).then(r => r[0]);
+      if (requesterUser) {
+        await createNotification({
+          userId: requesterUser.id,
+          title: 'Your purchase order is awaiting delivery',
+          body: `Your purchase order #${updatedRequest.customId} is now awaiting delivery. You will be notified when it is completed.`,
+          link: `/requests/${updatedRequest.customId}`,
+          type: 'in-app',
+          sendEmailNotification: true,
+        });
       }
     }
 

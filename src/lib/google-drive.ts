@@ -216,4 +216,23 @@ export function getRootFolderIdByType(type: 'purchase' | 'it_support' | 'mainten
   console.log(`[Google Drive] Usando pasta raiz para tipo '${type}':`, folderId);
   return folderId === 'root' ? 'root' : folderId;
 } 
+
+/**
+ * Baixa o conteúdo de um arquivo do Google Drive como Buffer
+ * @param fileId - ID do arquivo no Google Drive
+ * @returns Buffer do arquivo
+ */
+export async function getFileBufferFromDrive(fileId: string): Promise<Buffer> {
+  const drive = await getDriveClient();
+  const res = await drive.files.get({
+    fileId,
+    alt: 'media',
+  }, { responseType: 'stream' });
+  const stream = res.data as Readable;
+  const chunks: Buffer[] = [];
+  for await (const chunk of stream) {
+    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+  }
+  return Buffer.concat(chunks);
+} 
  

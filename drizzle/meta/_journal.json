@@ -57,6 +57,13 @@
       "when": 1752363056762,
       "tag": "0007_brown_smasher",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1752417756455,
+      "tag": "0008_hot_tusk",
+      "breakpoints": true
     }
   ]
 }

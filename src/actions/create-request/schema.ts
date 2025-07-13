@@ -1,25 +1,12 @@
 import { z } from 'zod'
 
-// Schema de validação para a criação de uma requisição.
+// Schema de validação adaptativo para criação de requisição (produto ou serviço)
 export const createRequestSchema = z.object({
-  requesterName: z.string().min(1, 'Requester name is required'),
-  title: z.string().min(3, 'The title must be at least 3 characters.'),
-  description: z.string().min(5, 'Describe the need.').optional(),
-  type: z.enum(['purchase', 'maintenance', 'it_ticket'], { errorMap: () => ({ message: 'Request type is required.' }) }),
-
-  // Purchase
-  productName: z.string().min(2, 'Enter the product name.').optional(),
-  quantity: z.coerce.number().min(1, 'Quantity must be greater than zero.').optional(),
-  unitPriceInCents: z.coerce.number().min(1, 'Enter the unit price.').optional(),
-  supplier: z.string().min(2, 'Enter the supplier.').optional(),
-
-  // Maintenance
-  equipment: z.string().optional(),
-  location: z.string().optional(),
-  priority: z.enum(['low', 'medium', 'high'], { errorMap: () => ({ message: 'Select the priority.' }) }).optional(),
-
-  // IT
-  category: z.string().optional(),
+  type: z.enum(['product', 'service'], { errorMap: () => ({ message: 'Tipo de requisição é obrigatório.' }) }),
+  requesterName: z.string().min(1, 'Nome do requisitante é obrigatório'),
+  title: z.string().min(3, 'O título deve ter pelo menos 3 caracteres.'),
+  description: z.string().min(5, 'Descreva a necessidade.').optional(),
+  priority: z.enum(['low', 'medium', 'high'], { errorMap: () => ({ message: 'Selecione a prioridade.' }) }),
   attachments: z.array(
     z.union([
       z.string(),
@@ -28,8 +15,31 @@ export const createRequestSchema = z.object({
         name: z.string(),
         webViewLink: z.string().optional(),
       }),
-      // Allow File for direct upload
       z.instanceof(File)
     ])
   ).max(5).optional(),
+
+  // Produto
+  productName: z.string().min(2, 'Informe o nome do produto.').optional(),
+  quantity: z.coerce.number().min(1, 'Quantidade deve ser maior que zero.').optional(),
+  unitPriceInCents: z.coerce.number().min(1, 'Informe o valor unitário.').optional(),
+  supplier: z.string().min(2, 'Informe o fornecedor.').optional(),
+
+  // Serviço
+  serviceDescription: z.string().min(5, 'Descreva o serviço.').optional(),
+  company: z.string().min(2, 'Informe a empresa executora.').optional(),
+  scheduledDate: z.string().optional(),
+  technicalResponsible: z.string().optional(),
+  budgets: z.array(z.any()).max(5).optional(),
 })
+.refine((data) => {
+  if (data.type === 'product') {
+    return !!data.productName && !!data.quantity && !!data.unitPriceInCents && !!data.supplier;
+  }
+  if (data.type === 'service') {
+    return !!data.serviceDescription && !!data.company;
+  }
+  return false;
+}, {
+  message: 'Preencha todos os campos obrigatórios conforme o tipo de requisição.',
+});
