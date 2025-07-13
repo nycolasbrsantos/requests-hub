@@ -4,7 +4,6 @@ import {
   requests,
   purchaseRequests,
   maintenanceRequests,
-  itSupportRequests,
   files
 } from '@/db/schema';
 import { eq } from 'drizzle-orm';
@@ -23,9 +22,6 @@ export async function GET(req: NextRequest, context: { params: Promise<{ request
   } else if (request.type === 'maintenance') {
     const [maintenance] = await db.select().from(maintenanceRequests).where(eq(maintenanceRequests.requestId, request.id));
     if (maintenance) extra = maintenance;
-  } else if (["it_support", "it_ticket"].includes(request.type as string)) {
-    const [itSupport] = await db.select().from(itSupportRequests).where(eq(itSupportRequests.requestId, request.id));
-    if (itSupport) extra = itSupport;
   }
 
   // Anexos da tabela files

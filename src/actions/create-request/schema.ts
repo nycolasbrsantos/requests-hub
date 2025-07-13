@@ -4,7 +4,8 @@ import { z } from 'zod'
 export const createRequestSchema = z.object({
   type: z.enum(['purchase', 'service', 'maintenance'], { errorMap: () => ({ message: 'Request type is required.' }) }),
   requesterName: z.string().min(1, 'Requester name is required'),
-  title: z.string().min(3, 'The title must be at least 3 characters.'),
+  // Title obrigatório apenas para maintenance
+  title: z.string().min(3, 'The title must be at least 3 characters.').optional(),
   description: z.string().min(5, 'Describe the need.').optional(),
   priority: z.enum(['low', 'medium', 'high'], { errorMap: () => ({ message: 'Select the priority.' }) }),
   attachments: z.array(
@@ -44,7 +45,7 @@ export const createRequestSchema = z.object({
     return !!data.serviceDescription && !!data.company;
   }
   if (data.type === 'maintenance') {
-    return !!data.location && !!data.maintenanceType;
+    return !!data.title && !!data.location && !!data.maintenanceType;
   }
   return false;
 }, {

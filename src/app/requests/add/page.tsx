@@ -1,12 +1,15 @@
 'use client'
 import React, { useState } from 'react'
 import { PageContainer } from '@/components/ui/page-container'
-import { CreateRequestForm } from './_components/CreateRequestForm'
-import { ArrowLeft, ShoppingCart, Wrench, Headphones } from 'lucide-react'
+// import { CreateRequestForm } from './_components/CreateRequestForm'
+import { ArrowLeft, ShoppingCart, Wrench } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useSession } from 'next-auth/react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { PurchaseRequestForm } from './_components/PurchaseRequestForm';
+import { MaintenanceRequestForm } from './_components/MaintenanceRequestForm';
+import { ServiceRequestForm } from './_components/ServiceRequestForm';
 
 export default function AddRequestPage() {
   const { data: session } = useSession()
@@ -17,16 +20,22 @@ export default function AddRequestPage() {
   const type = params.get('type');
 
   let icon = <ShoppingCart className="w-8 h-8 text-primary" />;
-  let title = 'New Purchase Request';
-  let subtitle = 'Fill out the form below to request a new purchase. Please be detailed to speed up processing.';
+  let title = 'New Request';
+  let subtitle = 'Fill out the form below to request a new request. Please be detailed to speed up processing.';
+  let FormComponent = null;
   if (type === 'maintenance') {
     icon = <Wrench className="w-8 h-8 text-primary" />;
     title = 'New Maintenance Request';
     subtitle = 'Fill out the form below to request new maintenance. Please be detailed to speed up processing.';
-  } else if (type === 'it_support') {
-    icon = <Headphones className="w-8 h-8 text-primary" />;
-    title = 'New IT Support Ticket';
-    subtitle = 'Fill out the form below to open a new IT support ticket.';
+    FormComponent = <MaintenanceRequestForm requesterName={userName} setIsLoading={setIsLoading} />;
+  } else if (type === 'service') {
+    FormComponent = <ServiceRequestForm requesterName={userName} setIsLoading={setIsLoading} />;
+    title = 'New Service Request';
+    subtitle = 'Fill out the form below to request a new service.';
+  } else {
+    FormComponent = <PurchaseRequestForm requesterName={userName} setIsLoading={setIsLoading} />;
+    title = 'New Purchase Request';
+    subtitle = 'Fill out the form below to request a new purchase.';
   }
 
   return (
@@ -53,7 +62,7 @@ export default function AddRequestPage() {
           <p className="text-muted-foreground text-base mt-1 mb-2 text-center max-w-xl">{subtitle}</p>
         </CardHeader>
         <CardContent className="pt-0 pb-8 px-6 sm:px-10">
-          <CreateRequestForm requesterName={userName} isLoading={isLoading} setIsLoading={setIsLoading} />
+          {FormComponent}
         </CardContent>
       </Card>
       {isLoading && (
