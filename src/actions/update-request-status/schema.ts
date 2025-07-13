@@ -13,8 +13,8 @@ export const updateRequestStatusSchema = z.object({
     'completed',
   ]),
   changedBy: z.string().optional(),
-  comment: z.string().min(1, 'Comentário obrigatório'),
-  poNumber: z.string().optional(), // Número da PO quando aprovada
+  comment: z.string().min(1, 'Comment is required'),
+  poNumber: z.string().optional(), // PO number when approved
   carrier: z.string().optional(),
   trackingCode: z.string().optional(),
   deliveryProof: z.any().optional(),

@@ -193,8 +193,8 @@ export function ApprovalModal({
   // Determinar quais ações estão disponíveis
   const canApproveNeed = currentStatus === 'pending' && (userRole === 'admin' || userRole === 'supervisor');
   const canApproveFinance = currentStatus === 'need_approved' && userRole === 'admin';
-  const canExecute = currentStatus === 'finance_approved' && (userRole === 'admin' || userRole === 'encarregado');
-  const canComplete = currentStatus === 'in_progress' && (userRole === 'admin' || userRole === 'encarregado');
+  const canExecute = currentStatus === 'finance_approved' && (userRole === 'admin' || userRole === 'manager');
+  const canComplete = currentStatus === 'in_progress' && (userRole === 'admin' || userRole === 'manager');
   const canReject = ['pending', 'need_approved'].includes(currentStatus) && (userRole === 'admin' || userRole === 'supervisor');
 
   return (

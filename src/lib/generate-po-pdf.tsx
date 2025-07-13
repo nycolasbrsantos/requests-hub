@@ -80,9 +80,9 @@ export async function generatePOPdf(request: {
         <Image src={cabecalhoBuffer} style={styles.logo} />
         <View style={{ position: 'relative', zIndex: 1 }}>
           {/* Conteúdo principal do PDF */}
-          <Text style={styles.institution}>Solicitações - RequestsHub</Text>
+          <Text style={styles.institution}>Requests - RequestsHub</Text>
           <Text style={styles.header}>
-            {isCompleted ? 'Purchase Order - Concluída' : 'Purchase Order - Aprovada'}
+            {isCompleted ? 'Purchase Order - Completed' : 'Purchase Order - Approved'}
           </Text>
           
           {/* Número da PO */}
@@ -99,26 +99,26 @@ export async function generatePOPdf(request: {
           <View style={styles.section}>
             <View style={styles.row}>
               <Text>
-                <Text style={styles.label}>PR Nº:</Text>{' '}{request.customId}{' '}
-                <Text style={styles.label}>Data:</Text>{' '}{new Date(request.createdAt).toLocaleString('pt-BR')}{' '}
+                <Text style={styles.label}>PR No.:</Text>{' '}{request.customId}{' '}
+                <Text style={styles.label}>Date:</Text>{' '}{new Date(request.createdAt).toLocaleString('en-US')}{' '}
               </Text>
             </View>
             <View style={styles.row}>
               <Text>
-                <Text style={styles.label}>Solicitante:</Text>{' '}{request.requesterName}{' '}
-                <Text style={styles.label}>Fornecedor:</Text>{' '}{request.supplier || '-'}{' '}
+                <Text style={styles.label}>Requester:</Text>{' '}{request.requesterName}{' '}
+                <Text style={styles.label}>Supplier:</Text>{' '}{request.supplier || '-'}{' '}
               </Text>
             </View>
           </View>
 
           {/* Detalhes do produto */}
           <View style={styles.section}>
-            <Text style={[styles.label, { marginBottom: 4 }]}>Detalhes do Produto</Text>
+            <Text style={[styles.label, { marginBottom: 4 }]}>Product Details</Text>
             <View style={styles.table}>
               <View style={styles.tableHeader}>
-                <Text style={styles.tableCellHeader}>Produto</Text>
-                <Text style={styles.tableCellHeader}>Quantidade</Text>
-                <Text style={styles.tableCellHeader}>Preço Unit.</Text>
+                <Text style={styles.tableCellHeader}>Product</Text>
+                <Text style={styles.tableCellHeader}>Quantity</Text>
+                <Text style={styles.tableCellHeader}>Unit Price</Text>
                 <Text style={styles.tableCellHeader}>Total</Text>
               </View>
               <View style={styles.tableRow}>
@@ -133,34 +133,34 @@ export async function generatePOPdf(request: {
           {/* Informações adicionais */}
           <View style={styles.section}>
             <Text>
-              <Text style={styles.label}>Descrição:</Text>{' '}{request.description || '-'}{' '}
+              <Text style={styles.label}>Description:</Text>{' '}{request.description || '-'}{' '}
             </Text>
             <Text>
-              <Text style={styles.label}>Prioridade:</Text>{' '}{request.priority || '-'}{' '}
+              <Text style={styles.label}>Priority:</Text>{' '}{request.priority || '-'}{' '}
             </Text>
           </View>
 
           {/* Aprovações */}
           <View style={styles.section}>
-            <Text style={[styles.label, { marginBottom: 4 }]}>Aprovações</Text>
+            <Text style={[styles.label, { marginBottom: 4 }]}>Approvals</Text>
             {request.needApprovedBy && (
-              <Text>✓ Necessidade aprovada por: {request.needApprovedBy}</Text>
+              <Text>✓ Need approved by: {request.needApprovedBy}</Text>
             )}
             {request.financeApprovedBy && (
-              <Text>✓ Financeiramente aprovada por: {request.financeApprovedBy}</Text>
+              <Text>✓ Financially approved by: {request.financeApprovedBy}</Text>
             )}
             {request.executedBy && (
-              <Text>✓ Executada por: {request.executedBy}</Text>
+              <Text>✓ Executed by: {request.executedBy}</Text>
             )}
           </View>
 
           {/* Lista de anexos */}
           {request.attachments && request.attachments.length > 0 && (
             <View style={[styles.section, { marginTop: 8 }]}> 
-              <Text style={[styles.label, { marginBottom: 4 }]}>Anexos da PO</Text>
+              <Text style={[styles.label, { marginBottom: 4 }]}>PO Attachments</Text>
               <View style={styles.table}>
                 <View style={styles.tableHeader}>
-                  <Text style={styles.tableCellHeader}>Nome</Text>
+                  <Text style={styles.tableCellHeader}>Name</Text>
                   <Text style={styles.tableCellHeader}>Link</Text>
                 </View>
                 {request.attachments.map((att, idx) => (
@@ -176,13 +176,13 @@ export async function generatePOPdf(request: {
           {/* Linha do tempo */}
           {request.statusHistory && request.statusHistory.length > 0 && (
             <View style={[styles.section, { marginTop: 16 }]}> 
-              <Text style={[styles.label, { marginBottom: 6 }]}>Histórico de Aprovações</Text>
+              <Text style={[styles.label, { marginBottom: 6 }]}>Approval History</Text>
               {request.statusHistory.map((h, idx) => (
                 <View key={idx} style={styles.timelineBlock}>
                   <Text style={styles.timelineStatus}>{h.status}</Text>
-                  <Text style={styles.timelineDate}>{new Date(h.changedAt).toLocaleString('pt-BR')}</Text>
+                  <Text style={styles.timelineDate}>{new Date(h.changedAt).toLocaleString('en-US')}</Text>
                   <Text>
-                    <Text style={styles.label}>Por:</Text>{' '}{h.changedBy}
+                    <Text style={styles.label}>By:</Text>{' '}{h.changedBy}
                   </Text>
                   {h.comment && (
                     <Text style={styles.timelineComment}>{h.comment}</Text>
@@ -196,7 +196,7 @@ export async function generatePOPdf(request: {
           )}
 
           <Text style={styles.footer}>
-            {isCompleted ? 'PO Concluída' : 'PO Aprovada'} em {new Date().toLocaleString('pt-BR')}
+            {isCompleted ? 'PO Completed' : 'PO Approved'} at {new Date().toLocaleString('en-US')}
           </Text>
         </View>
         {/* Rodapé visual institucional */}

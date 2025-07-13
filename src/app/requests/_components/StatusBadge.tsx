@@ -5,13 +5,13 @@ interface StatusBadgeProps {
 }
 
 const statusMap = {
-  pending: { label: 'PR Pendente', color: 'bg-yellow-400 text-black' },
-  need_approved: { label: 'PR Aprovada', color: 'bg-blue-400 text-white' },
-  finance_approved: { label: 'PO Aprovada', color: 'bg-green-500 text-white' },
-  awaiting_delivery: { label: 'Aguardando Entrega', color: 'bg-orange-400 text-white' },
-  rejected: { label: 'Rejeitada', color: 'bg-red-500 text-white' },
-  in_progress: { label: 'Em Execução', color: 'bg-purple-500 text-white' },
-  completed: { label: 'Concluída', color: 'bg-gray-500 text-white' },
+  pending: { label: 'PR Pending', color: 'bg-yellow-400 text-black' },
+  need_approved: { label: 'PR Approved', color: 'bg-blue-400 text-white' },
+  finance_approved: { label: 'PO Approved', color: 'bg-green-500 text-white' },
+  awaiting_delivery: { label: 'Awaiting Delivery', color: 'bg-orange-400 text-white' },
+  rejected: { label: 'Rejected', color: 'bg-red-500 text-white' },
+  in_progress: { label: 'In Progress', color: 'bg-purple-500 text-white' },
+  completed: { label: 'Completed', color: 'bg-gray-500 text-white' },
 };
 
 export function StatusBadge({ status }: StatusBadgeProps) {

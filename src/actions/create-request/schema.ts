@@ -2,23 +2,23 @@ import { z } from 'zod'
 
 // Schema de validação para a criação de uma requisição.
 export const createRequestSchema = z.object({
-  requesterName: z.string().min(1, 'Nome do requisitante é obrigatório'),
-  title: z.string().min(3, 'O título precisa ter no mínimo 3 caracteres.'),
-  description: z.string().min(5, 'Descreva a necessidade.').optional(),
-  type: z.enum(['purchase', 'maintenance', 'it_ticket'], { errorMap: () => ({ message: 'Tipo de requisição é obrigatório.' }) }),
+  requesterName: z.string().min(1, 'Requester name is required'),
+  title: z.string().min(3, 'The title must be at least 3 characters.'),
+  description: z.string().min(5, 'Describe the need.').optional(),
+  type: z.enum(['purchase', 'maintenance', 'it_ticket'], { errorMap: () => ({ message: 'Request type is required.' }) }),
 
-  // Compra
-  productName: z.string().min(2, 'Informe o nome do produto.').optional(),
-  quantity: z.coerce.number().min(1, 'Quantidade deve ser maior que zero.').optional(),
-  unitPriceInCents: z.coerce.number().min(1, 'Informe o preço unitário.').optional(),
-  supplier: z.string().min(2, 'Informe o fornecedor.').optional(),
+  // Purchase
+  productName: z.string().min(2, 'Enter the product name.').optional(),
+  quantity: z.coerce.number().min(1, 'Quantity must be greater than zero.').optional(),
+  unitPriceInCents: z.coerce.number().min(1, 'Enter the unit price.').optional(),
+  supplier: z.string().min(2, 'Enter the supplier.').optional(),
 
-  // Manutenção
+  // Maintenance
   equipment: z.string().optional(),
   location: z.string().optional(),
-  priority: z.enum(['low', 'medium', 'high'], { errorMap: () => ({ message: 'Selecione a prioridade.' }) }).optional(),
+  priority: z.enum(['low', 'medium', 'high'], { errorMap: () => ({ message: 'Select the priority.' }) }).optional(),
 
-  // T.I.
+  // IT
   category: z.string().optional(),
   attachments: z.array(
     z.union([
@@ -28,7 +28,7 @@ export const createRequestSchema = z.object({
         name: z.string(),
         webViewLink: z.string().optional(),
       }),
-      // Permitir File para upload direto
+      // Allow File for direct upload
       z.instanceof(File)
     ])
   ).max(5).optional(),

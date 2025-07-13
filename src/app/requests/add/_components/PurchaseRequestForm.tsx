@@ -26,15 +26,15 @@ import { reaisToCentavos } from '@/lib/utils';
 const MAX_FILES = 5;
 
 const productItemSchema = z.object({
-  productName: z.string().min(2, 'Informe o nome do produto.'),
-  quantity: z.coerce.number().min(1, 'Quantidade deve ser maior que zero.'),
+  productName: z.string().min(2, 'Enter the product name.'),
+  quantity: z.coerce.number().min(1, 'Quantity must be greater than zero.'),
   unitPriceInCents: z.string().optional(),
   supplier: z.string().optional(),
 });
 
 const purchaseSchema = z.object({
-  products: z.array(productItemSchema).min(1, 'Adicione pelo menos um produto.'),
-  description: z.string().min(5, 'Descreva a necessidade.'),
+  products: z.array(productItemSchema).min(1, 'Add at least one product.'),
+  description: z.string().min(5, 'Describe the need.'),
   priority: z.enum(['low', 'medium', 'high']).optional(),
   attachments: z.array(z.any()).max(MAX_FILES).optional(),
 });
@@ -73,13 +73,13 @@ export function PurchaseRequestForm({ requesterName, setIsLoading }: PurchaseReq
             body: formData,
           });
         }
-        toast.success('Requisição criada com sucesso!');
+        toast.success('Request created successfully!');
         form.reset();
         setAttachmentsPreview([]);
       } else if (!result?.data?.id) {
-        toast.error('Erro ao criar requisição: ID não retornado.');
+        toast.error('Error creating request: ID not returned.');
       } else {
-        toast.success('Requisição criada com sucesso!');
+        toast.success('Request created successfully!');
         form.reset();
         setAttachmentsPreview([]);
       }
@@ -102,7 +102,7 @@ export function PurchaseRequestForm({ requesterName, setIsLoading }: PurchaseReq
       } else {
         msg = JSON.stringify(error);
       }
-      toast.error('Erro ao criar requisição: ' + msg);
+      toast.error('Error creating request: ' + msg);
       setIsLoading(false);
     },
   });
@@ -138,7 +138,7 @@ export function PurchaseRequestForm({ requesterName, setIsLoading }: PurchaseReq
   // Toast de loading
   useEffect(() => {
     if (form.formState.isSubmitting && !loadingToastId.current) {
-      loadingToastId.current = toast.loading('Enviando requisição, aguarde...');
+      loadingToastId.current = toast.loading('Sending request, please wait...');
     }
     if (!form.formState.isSubmitting && loadingToastId.current) {
       toast.dismiss(loadingToastId.current);
@@ -175,7 +175,7 @@ export function PurchaseRequestForm({ requesterName, setIsLoading }: PurchaseReq
       supplier: firstProduct.supplier || '',
       description: values.description || '',
       priority: values.priority || 'medium',
-      title: values.products.map(p => p.productName || '').join(', ') || 'Nova requisição de compra',
+      title: values.products.map(p => p.productName || '').join(', ') || 'New purchase request',
       type: 'purchase' as const,
       requesterName: requesterName || '',
       attachments: attachmentsPreview || [],
@@ -223,7 +223,7 @@ export function PurchaseRequestForm({ requesterName, setIsLoading }: PurchaseReq
                       name={`products.${idx}.productName` as const}
                       render={({ field }) => (
                         <FormItem className="relative w-full">
-                          <FormLabel htmlFor={`productName-${idx}`} className={form.formState.errors.products?.[idx]?.productName ? 'text-destructive' : ''}>Produto</FormLabel>
+                          <FormLabel htmlFor={`productName-${idx}`} className={form.formState.errors.products?.[idx]?.productName ? 'text-destructive' : ''}>Product</FormLabel>
                           <div className="relative">
                             <ShoppingBag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                             <Input id={`productName-${idx}`} placeholder="Ex: Books" {...field} className="pl-10 w-full text-base" />
@@ -236,7 +236,7 @@ export function PurchaseRequestForm({ requesterName, setIsLoading }: PurchaseReq
                       name={`products.${idx}.quantity` as const}
                       render={({ field }) => (
                         <FormItem className="relative w-full">
-                          <FormLabel htmlFor={`quantity-${idx}`} className={form.formState.errors.products?.[idx]?.quantity ? 'text-destructive' : ''}>Qtd.</FormLabel>
+                          <FormLabel htmlFor={`quantity-${idx}`} className={form.formState.errors.products?.[idx]?.quantity ? 'text-destructive' : ''}>Quantity</FormLabel>
                           <div className="relative">
                             <Hash className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                             <Input id={`quantity-${idx}`} type="number" min={1} placeholder="0" {...field} className="pl-10 w-full text-base" />
@@ -249,7 +249,7 @@ export function PurchaseRequestForm({ requesterName, setIsLoading }: PurchaseReq
                       name={`products.${idx}.unitPriceInCents` as const}
                       render={({ field }) => (
                         <FormItem className="relative w-full">
-                          <FormLabel htmlFor={`unitPriceInCents-${idx}`} className={form.formState.errors.products?.[idx]?.unitPriceInCents ? 'text-destructive' : ''}>Preço Unitário</FormLabel>
+                          <FormLabel htmlFor={`unitPriceInCents-${idx}`} className={form.formState.errors.products?.[idx]?.unitPriceInCents ? 'text-destructive' : ''}>Unit Price</FormLabel>
                           <div className="relative">
                             <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                             <NumericFormat
@@ -273,7 +273,7 @@ export function PurchaseRequestForm({ requesterName, setIsLoading }: PurchaseReq
                       name={`products.${idx}.supplier` as const}
                       render={({ field }) => (
                         <FormItem className="relative w-full">
-                          <FormLabel htmlFor={`supplier-${idx}`} className={form.formState.errors.products?.[idx]?.supplier ? 'text-destructive' : ''}>Fornecedor</FormLabel>
+                          <FormLabel htmlFor={`supplier-${idx}`} className={form.formState.errors.products?.[idx]?.supplier ? 'text-destructive' : ''}>Supplier</FormLabel>
                           <div className="relative">
                             <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                             <Input id={`supplier-${idx}`} placeholder="Ex: Amazon" {...field} className="pl-10 w-full text-base" />
@@ -290,7 +290,7 @@ export function PurchaseRequestForm({ requesterName, setIsLoading }: PurchaseReq
                           size="icon"
                           className="text-red-500 hover:text-red-700 focus:ring-2 focus:ring-red-400"
                           onClick={() => remove(idx)}
-                          aria-label="Remover produto"
+                          aria-label="Remove product"
                         >
                           <X className="w-5 h-5" />
                         </Button>
@@ -299,7 +299,7 @@ export function PurchaseRequestForm({ requesterName, setIsLoading }: PurchaseReq
                   </div>
                 ))}
                 <Button type="button" variant="outline" className="mt-2 w-full sm:w-auto gap-2" onClick={() => append({ productName: '', quantity: 1, unitPriceInCents: '', supplier: '' })}>
-                  + Adicionar produto
+                  + Add product
                 </Button>
               </div>
               {/* Prioridade */}
@@ -309,14 +309,14 @@ export function PurchaseRequestForm({ requesterName, setIsLoading }: PurchaseReq
                 render={({ field }) => (
                   <FormItem className="w-full">
                     <div className="flex items-center gap-2 mb-1">
-                      <FormLabel htmlFor="priority" className={form.formState.errors.priority ? 'text-destructive' : ''}>Prioridade</FormLabel>
+                      <FormLabel htmlFor="priority" className={form.formState.errors.priority ? 'text-destructive' : ''}>Priority</FormLabel>
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Info className="w-4 h-4 text-muted-foreground cursor-pointer ml-1" aria-label="Ajuda sobre prioridade" />
+                            <Info className="w-4 h-4 text-muted-foreground cursor-pointer ml-1" aria-label="Help about priority" />
                           </TooltipTrigger>
                           <TooltipContent side="top" className="max-w-xs text-sm">
-                            Defina a prioridade da requisição para ajudar no atendimento. Alta = urgente.
+                            Set the priority of the request to help with fulfillment. High = urgent.
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
@@ -325,17 +325,17 @@ export function PurchaseRequestForm({ requesterName, setIsLoading }: PurchaseReq
                       <Flag className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors ${getFlagColor(field.value)}`} />
                       <Select value={field.value} onValueChange={field.onChange}>
                         <SelectTrigger id="priority" className="pl-10 w-full text-base transition-all focus:ring-2 focus:ring-primary">
-                          <SelectValue placeholder="Selecione" />
+                          <SelectValue placeholder="Select" />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="low">
-                            <span className="text-green-600 font-medium">Baixa</span>
+                            <span className="text-green-600 font-medium">Low</span>
                           </SelectItem>
                           <SelectItem value="medium">
-                            <span className="text-yellow-500 font-medium">Média</span>
+                            <span className="text-yellow-500 font-medium">Medium</span>
                           </SelectItem>
                           <SelectItem value="high">
-                            <span className="text-red-600 font-medium">Alta</span>
+                            <span className="text-red-600 font-medium">High</span>
                           </SelectItem>
                         </SelectContent>
                       </Select>
@@ -349,8 +349,8 @@ export function PurchaseRequestForm({ requesterName, setIsLoading }: PurchaseReq
                 name="description"
                 render={({ field }) => (
                   <FormItem className="w-full">
-                    <FormLabel htmlFor="description" className={form.formState.errors.description ? 'text-destructive' : ''}>Descrição</FormLabel>
-                    <Textarea id="description" placeholder="Descreva a necessidade da compra..." rows={3} {...field} className="w-full text-base" />
+                    <FormLabel htmlFor="description" className={form.formState.errors.description ? 'text-destructive' : ''}>Description</FormLabel>
+                    <Textarea id="description" placeholder="Describe the need for the purchase..." rows={3} {...field} className="w-full text-base" />
                   </FormItem>
                 )}
               />
@@ -361,7 +361,7 @@ export function PurchaseRequestForm({ requesterName, setIsLoading }: PurchaseReq
                 render={() => (
                   <FormItem className="w-full">
                     <div className="flex items-center gap-2 mb-1">
-                      <FormLabel htmlFor="attachments" className={form.formState.errors.attachments ? 'text-destructive' : ''}>Anexos</FormLabel>
+                      <FormLabel htmlFor="attachments" className={form.formState.errors.attachments ? 'text-destructive' : ''}>Attachments</FormLabel>
                       {attachmentsPreview.length > 0 && (
                         <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 animate-fade-in">
                           {attachmentsPreview.length}
@@ -370,10 +370,10 @@ export function PurchaseRequestForm({ requesterName, setIsLoading }: PurchaseReq
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Info className="w-4 h-4 text-muted-foreground cursor-pointer ml-1" aria-label="Ajuda sobre anexos" />
+                            <Info className="w-4 h-4 text-muted-foreground cursor-pointer ml-1" aria-label="Help about attachments" />
                           </TooltipTrigger>
                           <TooltipContent side="top" className="max-w-xs text-sm">
-                            Você pode anexar até 5 arquivos PDF ou JPEG, cada um com até 5MB. Arraste e solte ou clique na área abaixo.
+                            You can attach up to 5 PDF or JPEG files, each with a maximum of 5MB. Drag and drop or click below.
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
@@ -396,16 +396,16 @@ export function PurchaseRequestForm({ requesterName, setIsLoading }: PurchaseReq
                         if (form.formState.isSubmitting) return;
                         const files = Array.from(e.dataTransfer.files || []);
                         if (files.length + attachmentsPreview.length > 5) {
-                          toast.error('Você pode anexar no máximo 5 arquivos.');
+                          toast.error('You can attach a maximum of 5 files.');
                           return;
                         }
                         for (const file of files) {
                           if (file.size > 5 * 1024 * 1024) {
-                            toast.error(`O arquivo "${file.name}" excede 5MB.`);
+                            toast.error(`The file "${file.name}" exceeds 5MB.`);
                             return;
                           }
                           if (!['application/pdf', 'image/jpeg'].includes(file.type)) {
-                            toast.error(`O arquivo "${file.name}" não é PDF ou JPEG.`);
+                            toast.error(`The file "${file.name}" is not a PDF or JPEG.`);
                             return;
                           }
                         }
@@ -415,7 +415,7 @@ export function PurchaseRequestForm({ requesterName, setIsLoading }: PurchaseReq
                       }}
                     >
                       <UploadCloud className="w-10 h-10 text-primary mb-2 transition-transform duration-200 group-hover:scale-110" />
-                      <span className="text-sm text-muted-foreground text-center select-none">Arraste e solte arquivos PDF/JPEG aqui ou clique para selecionar</span>
+                      <span className="text-sm text-muted-foreground text-center select-none">Drag and drop PDF/JPEG files here or click to select</span>
                       <Input
                         id="attachments"
                         type="file"
@@ -425,16 +425,16 @@ export function PurchaseRequestForm({ requesterName, setIsLoading }: PurchaseReq
                         onChange={e => {
                           const files = Array.from(e.target.files || []);
                           if (files.length + attachmentsPreview.length > 5) {
-                            toast.error('Você pode anexar no máximo 5 arquivos.');
+                            toast.error('You can attach a maximum of 5 files.');
                             return;
                           }
                           for (const file of files) {
                             if (file.size > 5 * 1024 * 1024) {
-                              toast.error(`O arquivo "${file.name}" excede 5MB.`);
+                              toast.error(`The file "${file.name}" exceeds 5MB.`);
                               return;
                             }
                             if (!['application/pdf', 'image/jpeg'].includes(file.type)) {
-                              toast.error(`O arquivo "${file.name}" não é PDF ou JPEG.`);
+                              toast.error(`The file "${file.name}" is not a PDF or JPEG.`);
                               return;
                             }
                           }
@@ -444,7 +444,7 @@ export function PurchaseRequestForm({ requesterName, setIsLoading }: PurchaseReq
                         }}
                         className="absolute inset-0 opacity-0 cursor-pointer"
                         style={{ zIndex: 2 }}
-                        aria-label="Selecionar arquivos para anexar"
+                        aria-label="Select files to attach"
                       />
                     </div>
                     {attachmentsPreview.length > 0 && (
@@ -454,7 +454,7 @@ export function PurchaseRequestForm({ requesterName, setIsLoading }: PurchaseReq
                             <span className="truncate max-w-[120px]" title={file.name}>{file.name}</span>
                             <button
                               type="button"
-                              aria-label={`Remover anexo ${file.name}`}
+                              aria-label={`Remove attachment ${file.name}`}
                               className="ml-1 text-red-500 hover:text-red-700 transition-colors duration-150 p-1 rounded-full focus:outline-none focus:ring-2 focus:ring-red-400"
                               onClick={() => {
                                 const newFiles = attachmentsPreview.filter((_, i) => i !== idx);
@@ -481,10 +481,10 @@ export function PurchaseRequestForm({ requesterName, setIsLoading }: PurchaseReq
                       ) : (
                         <Send className="h-5 w-5" />
                       )}
-                      {form.formState.isSubmitting ? 'Enviando...' : 'Enviar Requisição'}
+                      {form.formState.isSubmitting ? 'Sending...' : 'Send Request'}
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent side="top">Enviar requisição para aprovação</TooltipContent>
+                  <TooltipContent side="top">Send request for approval</TooltipContent>
                 </Tooltip>
               </TooltipProvider>
             </form>

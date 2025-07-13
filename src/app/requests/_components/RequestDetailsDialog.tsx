@@ -152,47 +152,47 @@ function RequestDetailsHeader({ request }: { request: RequestDetails }) {
   );
 }
 
-// Informações gerais
+// General Information
 function RequestGeneralInfo({ request }: { request: RequestDetails }) {
   return (
     <div className="bg-white/80 rounded-xl shadow p-4 border">
       <div className="font-semibold text-primary mb-2 flex items-center gap-2">
-        <FileText className="w-4 h-4" /> Informações Gerais
+        <FileText className="w-4 h-4" /> General Information
       </div>
-      <div className="mb-1"><b>Tipo:</b> {getTypeLabel(request.type)}</div>
+      <div className="mb-1"><b>Type:</b> {getTypeLabel(request.type)}</div>
       <div className="mb-1"><b>Status:</b> <StatusBadge status={request.status} /></div>
-      <div className="mb-1"><b>Prioridade:</b> {request.priority ? getPriorityLabel(request.priority) : '-'}</div>
-      {request.description && <div className="mb-1"><b>Descrição:</b> {request.description}</div>}
+      <div className="mb-1"><b>Priority:</b> {request.priority ? getPriorityLabel(request.priority) : '-'}</div>
+      {request.description && <div className="mb-1"><b>Description:</b> {request.description}</div>}
     </div>
   );
 }
 
-// Detalhes específicos
+// Purchase Details
 function RequestSpecificDetails({ request }: { request: RequestDetails }) {
   if (request.type === 'purchase') {
     return (
       <div className="bg-blue-50 rounded-xl shadow p-4 border border-blue-200">
         <div className="font-semibold text-primary mb-2 flex items-center gap-2">
-          <ShoppingCart className="w-4 h-4" /> Detalhes de Compra
+          <ShoppingCart className="w-4 h-4" /> Purchase Details
         </div>
-        {request.productName && <div><b>Produto:</b> {request.productName}</div>}
-        {request.quantity !== undefined && <div><b>Quantidade:</b> {request.quantity}</div>}
-        {request.unitPriceInCents !== undefined && <div><b>Preço Unitário:</b> R$ {request.unitPriceInCents}</div>}
-        {request.supplier && <div><b>Fornecedor:</b> {request.supplier}</div>}
-        {request.poNumber && <div><b>Número da PO:</b> {request.poNumber}</div>}
-        {request.needApprovedBy && <div><b>Aprovado por:</b> {request.needApprovedBy}</div>}
-        {request.financeApprovedBy && <div><b>Aprovado financeiramente por:</b> {request.financeApprovedBy}</div>}
-        {request.executedBy && <div><b>Executado por:</b> {request.executedBy}</div>}
-        {request.carrier && <div><b>Transportadora:</b> {request.carrier}</div>}
-        {request.trackingCode && <div><b>Código de rastreio:</b> {request.trackingCode}</div>}
+        {request.productName && <div><b>Product:</b> {request.productName}</div>}
+        {request.quantity !== undefined && <div><b>Quantity:</b> {request.quantity}</div>}
+        {request.unitPriceInCents !== undefined && <div><b>Unit Price:</b> ${request.unitPriceInCents}</div>}
+        {request.supplier && <div><b>Supplier:</b> {request.supplier}</div>}
+        {request.poNumber && <div><b>PO Number:</b> {request.poNumber}</div>}
+        {request.needApprovedBy && <div><b>Approved by:</b> {request.needApprovedBy}</div>}
+        {request.financeApprovedBy && <div><b>Financially approved by:</b> {request.financeApprovedBy}</div>}
+        {request.executedBy && <div><b>Executed by:</b> {request.executedBy}</div>}
+        {request.carrier && <div><b>Carrier:</b> {request.carrier}</div>}
+        {request.trackingCode && <div><b>Tracking Code:</b> {request.trackingCode}</div>}
         {Array.isArray(request.deliveryProof) && request.deliveryProof.length > 0 && (
           <div className="mt-2">
-            <b>Comprovantes de compra/entrega:</b>
+            <b>Purchase/Delivery Proofs:</b>
             <ul className="list-disc ml-6">
               {request.deliveryProof.map((proof, idx) => (
                 <li key={proof.id || idx}>
                   <a href={proof.webViewLink} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">
-                    {proof.name || 'Comprovante'}
+                    {proof.name || 'Proof'}
                   </a>
                 </li>
               ))}
@@ -206,11 +206,11 @@ function RequestSpecificDetails({ request }: { request: RequestDetails }) {
     return (
       <div className="bg-yellow-50 rounded-xl shadow p-4 border border-yellow-200">
         <div className="font-semibold text-yellow-700 mb-2 flex items-center gap-2">
-          <Wrench className="w-4 h-4" /> Detalhes de Manutenção
+          <Wrench className="w-4 h-4" /> Maintenance Details
         </div>
-        {request.equipment && <div><b>Equipamento:</b> {request.equipment}</div>}
-        {request.location && <div><b>Local:</b> {request.location}</div>}
-        {request.maintenanceType && <div><b>Tipo de Manutenção:</b> {request.maintenanceType}</div>}
+        {request.equipment && <div><b>Equipment:</b> {request.equipment}</div>}
+        {request.location && <div><b>Location:</b> {request.location}</div>}
+        {request.maintenanceType && <div><b>Maintenance Type:</b> {request.maintenanceType}</div>}
       </div>
     );
   }
@@ -218,23 +218,23 @@ function RequestSpecificDetails({ request }: { request: RequestDetails }) {
     return (
       <div className="bg-blue-50 rounded-xl shadow p-4 border border-blue-200">
         <div className="font-semibold text-blue-700 mb-2 flex items-center gap-2">
-          <Headphones className="w-4 h-4" /> Detalhes de Suporte T.I.
+          <Headphones className="w-4 h-4" /> IT Support Details
         </div>
-        {request.category && <div><b>Categoria:</b> {request.category}</div>}
-        {request.issueTitle && <div><b>Título do Problema:</b> {request.issueTitle}</div>}
-        {request.urgency && <div><b>Urgência:</b> {getPriorityLabel(request.urgency)}</div>}
+        {request.category && <div><b>Category:</b> {request.category}</div>}
+        {request.issueTitle && <div><b>Issue Title:</b> {request.issueTitle}</div>}
+        {request.urgency && <div><b>Urgency:</b> {getPriorityLabel(request.urgency)}</div>}
       </div>
     );
   }
   return null;
 }
 
-// Anexos
+// Attachments
 function RequestAttachments({ attachments }: { attachments: Attachment[] }) {
   return (
     <div className="bg-white/80 rounded-xl shadow p-4 border">
       <div className="font-semibold flex items-center gap-2 mb-2">
-        <Paperclip className="w-4 h-4" /> Anexos
+        <Paperclip className="w-4 h-4" /> Attachments
       </div>
       {attachments && attachments.length > 0 ? (
         <ul className="space-y-2">
@@ -252,7 +252,7 @@ function RequestAttachments({ attachments }: { attachments: Attachment[] }) {
                 variant="ghost"
                 size="icon"
                 onClick={() => att.webViewLink && saveAs(att.webViewLink, att.name)}
-                title="Baixar"
+                title="Download"
               >
                 <ArrowDownToLine className="w-4 h-4" />
               </Button>
@@ -260,18 +260,18 @@ function RequestAttachments({ attachments }: { attachments: Attachment[] }) {
           ))}
         </ul>
       ) : (
-        <div className="text-muted-foreground text-sm">Nenhum anexo.</div>
+        <div className="text-muted-foreground text-sm">No attachments.</div>
       )}
     </div>
   );
 }
 
-// Histórico de status
+// Status History
 function RequestStatusHistory({ history }: { history: StatusHistoryItem[] }) {
   return (
     <div className="bg-white/80 rounded-xl shadow p-4 border">
       <div className="font-semibold flex items-center gap-2 mb-2">
-        <ArrowRightLeft className="w-4 h-4" /> Histórico de Status
+        <ArrowRightLeft className="w-4 h-4" /> Status History
       </div>
       <ul className="space-y-3 border-l-2 border-primary/30 pl-4">
         {history && history.length > 0 ? (
@@ -284,30 +284,30 @@ function RequestStatusHistory({ history }: { history: StatusHistoryItem[] }) {
                 {item.status === 'rejected' && <XCircle className="w-4 h-4 text-red-600" />}
                 {item.status === 'in_progress' && <Loader2 className="w-4 h-4 text-yellow-600 animate-spin" />}
                 {item.status === 'completed' && <CheckCircle2 className="w-4 h-4 text-blue-600" />}
-                <span className="font-semibold capitalize">{item.status === 'awaiting_delivery' ? 'Aguardando Entrega' : item.status}</span>
-                <span className="text-xs text-muted-foreground ml-2">{dayjs(item.changedAt).format('DD/MM/YYYY HH:mm')}</span>
+                <span className="font-semibold capitalize">{item.status === 'awaiting_delivery' ? 'Awaiting Delivery' : item.status}</span>
+                <span className="text-xs text-muted-foreground ml-2">{dayjs(item.changedAt).format('MM/DD/YYYY HH:mm')}</span>
               </div>
               {item.comment && <div className="text-xs text-muted-foreground ml-6 mt-1">{item.comment}</div>}
-              <div className="text-xs text-muted-foreground ml-6">Por: {item.changedBy}</div>
+              <div className="text-xs text-muted-foreground ml-6">By: {item.changedBy}</div>
             </li>
           ))
         ) : (
-          <li className="text-muted-foreground text-sm">Sem histórico.</li>
+          <li className="text-muted-foreground text-sm">No history.</li>
         )}
       </ul>
     </div>
   );
 }
 
-// Ações do rodapé
+// Actions
 function RequestDetailsActions({ request }: { request: RequestDetails }) {
   return (
     <Button
       variant="outline"
       onClick={() => handleGeneratePdf(request)}
-      title="Gerar PDF da requisição"
+      title="Generate request PDF"
     >
-      <FileText className="w-4 h-4 mr-2" /> Gerar PDF
+      <FileText className="w-4 h-4 mr-2" /> Generate PDF
     </Button>
   );
 }
@@ -320,24 +320,24 @@ function getPriorityColor(priority?: string) {
   return 'text-primary';
 }
 function getPriorityLabel(priority?: string) {
-  if (priority === 'high') return 'Alta';
-  if (priority === 'medium') return 'Média';
-  if (priority === 'low') return 'Baixa';
+  if (priority === 'high') return 'High';
+  if (priority === 'medium') return 'Medium';
+  if (priority === 'low') return 'Low';
   return '-';
 }
 function getTypeLabel(type: string) {
-  if (type === 'purchase') return 'Compras';
-  if (type === 'maintenance') return 'Manutenção';
-  return 'T.I.';
+  if (type === 'purchase') return 'Purchase';
+  if (type === 'maintenance') return 'Maintenance';
+  return 'IT Support';
 }
 async function handleGeneratePdf(request: RequestDetails) {
   const res = await fetch(`/api/requests/${request.id}/generate-pdf`);
   if (!res.ok) {
-    alert('Erro ao gerar PDF');
+    alert('Error generating PDF');
     return;
   }
   const blob = await res.blob();
-  saveAs(blob, `Requisicao-${request.customId || request.id}.pdf`);
+  saveAs(blob, `Request-${request.customId || request.id}.pdf`);
 }
 
 // Componente principal
@@ -350,7 +350,7 @@ export default function RequestDetailsDialog({ requestId, open, onOpenChange }: 
         <DialogHeader>
           <DialogTitle>
             {loading || !request
-              ? 'Detalhes da Requisição'
+              ? 'Request Details'
               : request.customId || request.title || '-'}
           </DialogTitle>
           {loading || !request ? (
@@ -391,7 +391,7 @@ export default function RequestDetailsDialog({ requestId, open, onOpenChange }: 
         <DialogFooter className="mt-8 flex justify-end gap-4">
           {!loading && request && <RequestDetailsActions request={request} />}
           <DialogClose asChild>
-            <Button variant="ghost">Fechar</Button>
+            <Button variant="ghost">Close</Button>
           </DialogClose>
         </DialogFooter>
       </DialogContent>

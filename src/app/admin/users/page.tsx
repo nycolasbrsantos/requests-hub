@@ -15,13 +15,13 @@ import { Button } from '@/components/ui/button';
 const roles = [
 	{ value: 'admin', label: 'Admin' },
 	{ value: 'supervisor', label: 'Supervisor' },
-	{ value: 'encarregado', label: 'Encarregado' },
-	{ value: 'user', label: 'Usuário' },
+	{ value: 'manager', label: 'Manager' },
+	{ value: 'user', label: 'User' },
 ];
 
 async function updateUserRole(
 	userId: number,
-	newRole: 'admin' | 'supervisor' | 'encarregado' | 'user'
+	newRole: 'admin' | 'supervisor' | 'manager' | 'user'
 ) {
 	'use server';
 	await db.update(users).set({ role: newRole }).where(eq(users.id, userId));
@@ -46,20 +46,20 @@ export default async function AdminUsersPage() {
 								className="mb-4 flex items-center gap-2"
 							>
 								<ArrowLeft className="w-4 h-4" />
-								Voltar para Home
+								Back to Home
 							</Button>
 						</Link>
 						<CardTitle className="text-2xl font-bold">
-							Administração de Usuários
+							User Administration
 						</CardTitle>
 					</CardHeader>
 					<CardContent>
 						<table className="min-w-full border rounded-md bg-white dark:bg-zinc-900">
 							<thead>
 								<tr className="border-b">
-									<th className="px-4 py-2 text-left">Nome</th>
+									<th className="px-4 py-2 text-left">Name</th>
 									<th className="px-4 py-2 text-left">Email</th>
-									<th className="px-4 py-2 text-left">Perfil</th>
+									<th className="px-4 py-2 text-left">Role</th>
 								</tr>
 							</thead>
 							<tbody>
@@ -78,7 +78,7 @@ export default async function AdminUsersPage() {
 														formData.get('role') as
 														| 'admin'
 														| 'supervisor'
-														| 'encarregado'
+														| 'manager'
 														| 'user';
 													await updateUserRole(user.id, newRole);
 												}}
@@ -105,7 +105,7 @@ export default async function AdminUsersPage() {
 													type="submit"
 													className="ml-2 px-2 py-1 text-xs bg-primary text-white rounded"
 												>
-													Salvar
+													Save
 												</button>
 											</form>
 										</td>

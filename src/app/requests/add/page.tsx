@@ -17,16 +17,16 @@ export default function AddRequestPage() {
   const type = params.get('type');
 
   let icon = <ShoppingCart className="w-8 h-8 text-primary" />;
-  let title = 'Nova Requisição de Compras';
-  let subtitle = 'Preencha os campos abaixo para solicitar uma nova compra. Seja detalhista para agilizar o atendimento.';
+  let title = 'New Purchase Request';
+  let subtitle = 'Fill out the form below to request a new purchase. Please be detailed to speed up processing.';
   if (type === 'maintenance') {
     icon = <Wrench className="w-8 h-8 text-primary" />;
-    title = 'Nova Requisição de Manutenção';
-    subtitle = 'Preencha os campos abaixo para solicitar uma nova manutenção. Seja detalhista para agilizar o atendimento.';
+    title = 'New Maintenance Request';
+    subtitle = 'Fill out the form below to request new maintenance. Please be detailed to speed up processing.';
   } else if (type === 'it_support') {
     icon = <Headphones className="w-8 h-8 text-primary" />;
-    title = 'Novo Chamado de Suporte de T.I.';
-    subtitle = 'Preencha os campos abaixo para abrir um chamado de suporte técnico.';
+    title = 'New IT Support Ticket';
+    subtitle = 'Fill out the form below to open a new IT support ticket.';
   }
 
   return (
@@ -44,7 +44,7 @@ export default function AddRequestPage() {
             aria-disabled={isLoading}
           >
             <ArrowLeft className="w-4 h-4" />
-            Voltar para Home
+            Back to Home
           </Button>
           <div className="flex items-center gap-3 mt-2">
             {icon}
@@ -64,7 +64,7 @@ export default function AddRequestPage() {
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
             </svg>
             <span className="text-primary mt-6 text-xl font-semibold animate-pulse select-none">
-              Enviando requisição<span className="inline-block animate-bounce">...</span>
+              Sending request<span className="inline-block animate-bounce">...</span>
             </span>
           </div>
         </div>

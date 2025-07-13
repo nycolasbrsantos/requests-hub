@@ -24,10 +24,10 @@ import { Skeleton } from '@/components/ui/skeleton';
 const MAX_FILES = 5;
 
 const maintenanceSchema = z.object({
-  location: z.string().min(2, 'Informe o local.'),
-  maintenanceType: z.string().min(2, 'Informe o tipo de manutenção.'),
-  description: z.string().min(5, 'Descreva a necessidade.'),
-  priority: z.enum(['low', 'medium', 'high'], { required_error: 'Selecione a prioridade.' }),
+  location: z.string().min(2, 'Enter the location.'),
+  maintenanceType: z.string().min(2, 'Enter the maintenance type.'),
+  description: z.string().min(5, 'Describe the need.'),
+  priority: z.enum(['low', 'medium', 'high'], { required_error: 'Select the priority.' }),
   attachments: z.array(z.any()).max(MAX_FILES).optional(),
 });
 
@@ -62,12 +62,12 @@ export function MaintenanceRequestForm({ requesterName, setIsLoading }: Maintena
             body: formData,
           });
         }
-        toast.success('Requisição criada com sucesso!');
+        toast.success('Request created successfully!');
         form.reset();
       } else if (!result?.data?.id) {
-        toast.error('Erro ao criar requisição: ID não retornado.');
+        toast.error('Error creating request: ID not returned.');
       } else {
-        toast.success('Requisição criada com sucesso!');
+        toast.success('Request created successfully!');
         form.reset();
       }
       setIsLoading(false);
@@ -89,7 +89,7 @@ export function MaintenanceRequestForm({ requesterName, setIsLoading }: Maintena
       } else {
         msg = JSON.stringify(error);
       }
-      toast.error('Erro ao criar requisição: ' + msg);
+      toast.error('Error creating request: ' + msg);
       setIsLoading(false);
     },
   });
@@ -126,7 +126,7 @@ export function MaintenanceRequestForm({ requesterName, setIsLoading }: Maintena
   // Toast de loading
   useEffect(() => {
     if (form.formState.isSubmitting && !loadingToastId.current) {
-      loadingToastId.current = toast.loading('Enviando requisição, aguarde...');
+      loadingToastId.current = toast.loading('Sending request, please wait...');
     }
     if (!form.formState.isSubmitting && loadingToastId.current) {
       toast.dismiss(loadingToastId.current);
@@ -192,8 +192,8 @@ export function MaintenanceRequestForm({ requesterName, setIsLoading }: Maintena
                   name="location"
                   render={({ field }) => (
                     <FormItem className="relative w-full">
-                      <FormLabel htmlFor="location" className={form.formState.errors.location ? 'text-destructive' : ''}>Local</FormLabel>
-                      <Input id="location" placeholder="Ex: Sala 101" {...field} className="w-full text-base" />
+                      <FormLabel htmlFor="location" className={form.formState.errors.location ? 'text-destructive' : ''}>Location</FormLabel>
+                      <Input id="location" placeholder="Ex: Room 101" {...field} className="w-full text-base" />
                     </FormItem>
                   )}
                 />
@@ -202,8 +202,8 @@ export function MaintenanceRequestForm({ requesterName, setIsLoading }: Maintena
                   name="maintenanceType"
                   render={({ field }) => (
                     <FormItem className="relative w-full">
-                      <FormLabel htmlFor="maintenanceType" className={form.formState.errors.maintenanceType ? 'text-destructive' : ''}>Tipo de Manutenção</FormLabel>
-                      <Input id="maintenanceType" placeholder="Ex: Elétrica, Hidráulica..." {...field} className="w-full text-base" />
+                      <FormLabel htmlFor="maintenanceType" className={form.formState.errors.maintenanceType ? 'text-destructive' : ''}>Maintenance Type</FormLabel>
+                      <Input id="maintenanceType" placeholder="Ex: Electrical, Plumbing..." {...field} className="w-full text-base" />
                     </FormItem>
                   )}
                 />
@@ -215,14 +215,14 @@ export function MaintenanceRequestForm({ requesterName, setIsLoading }: Maintena
                 render={({ field }) => (
                   <FormItem className="w-full">
                     <div className="flex items-center gap-2 mb-1">
-                      <FormLabel htmlFor="priority" className={form.formState.errors.priority ? 'text-destructive' : ''}>Prioridade</FormLabel>
+                      <FormLabel htmlFor="priority" className={form.formState.errors.priority ? 'text-destructive' : ''}>Priority</FormLabel>
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Info className="w-4 h-4 text-muted-foreground cursor-pointer ml-1" aria-label="Ajuda sobre prioridade" />
+                            <Info className="w-4 h-4 text-muted-foreground cursor-pointer ml-1" aria-label="Help about priority" />
                           </TooltipTrigger>
                           <TooltipContent side="top" className="max-w-xs text-sm">
-                            Defina a prioridade da requisição para ajudar no atendimento. Alta = urgente.
+                            Define the priority of the request to help with the service. High = urgent.
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
@@ -231,17 +231,17 @@ export function MaintenanceRequestForm({ requesterName, setIsLoading }: Maintena
                       <Flag className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors ${getFlagColor(field.value)}`} />
                       <Select value={field.value} onValueChange={field.onChange}>
                         <SelectTrigger id="priority" className="pl-10 w-full text-base transition-all focus:ring-2 focus:ring-primary">
-                          <SelectValue placeholder="Selecione" />
+                          <SelectValue placeholder="Select" />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="low">
-                            <span className="text-green-600 font-medium">Baixa</span>
+                            <span className="text-green-600 font-medium">Low</span>
                           </SelectItem>
                           <SelectItem value="medium">
-                            <span className="text-yellow-500 font-medium">Média</span>
+                            <span className="text-yellow-500 font-medium">Medium</span>
                           </SelectItem>
                           <SelectItem value="high">
-                            <span className="text-red-600 font-medium">Alta</span>
+                            <span className="text-red-600 font-medium">High</span>
                           </SelectItem>
                         </SelectContent>
                       </Select>
@@ -255,8 +255,8 @@ export function MaintenanceRequestForm({ requesterName, setIsLoading }: Maintena
                 name="description"
                 render={({ field }) => (
                   <FormItem className="w-full">
-                    <FormLabel htmlFor="description" className={form.formState.errors.description ? 'text-destructive' : ''}>Descrição</FormLabel>
-                    <Textarea id="description" placeholder="Descreva a necessidade da manutenção..." rows={3} {...field} className="w-full text-base" />
+                    <FormLabel htmlFor="description" className={form.formState.errors.description ? 'text-destructive' : ''}>Description</FormLabel>
+                    <Textarea id="description" placeholder="Describe the maintenance need..." rows={3} {...field} className="w-full text-base" />
                   </FormItem>
                 )}
               />
@@ -267,7 +267,7 @@ export function MaintenanceRequestForm({ requesterName, setIsLoading }: Maintena
                 render={() => (
                   <FormItem className="w-full">
                     <div className="flex items-center gap-2 mb-1">
-                      <FormLabel htmlFor="attachments" className={form.formState.errors.attachments ? 'text-destructive' : ''}>Anexos</FormLabel>
+                      <FormLabel htmlFor="attachments" className={form.formState.errors.attachments ? 'text-destructive' : ''}>Attachments</FormLabel>
                       {attachmentsPreview.length > 0 && (
                         <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 animate-fade-in">
                           {attachmentsPreview.length}
@@ -276,10 +276,10 @@ export function MaintenanceRequestForm({ requesterName, setIsLoading }: Maintena
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Info className="w-4 h-4 text-muted-foreground cursor-pointer ml-1" aria-label="Ajuda sobre anexos" />
+                            <Info className="w-4 h-4 text-muted-foreground cursor-pointer ml-1" aria-label="Help about attachments" />
                           </TooltipTrigger>
                           <TooltipContent side="top" className="max-w-xs text-sm">
-                            Você pode anexar até 5 arquivos PDF ou JPEG, cada um com até 5MB. Arraste e solte ou clique na área abaixo.
+                            You can attach up to 5 PDF or JPEG files, each with a maximum of 5MB. Drag and drop or click the area below.
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
@@ -302,16 +302,16 @@ export function MaintenanceRequestForm({ requesterName, setIsLoading }: Maintena
                         if (form.formState.isSubmitting) return;
                         const files = Array.from(e.dataTransfer.files || []);
                         if (files.length + attachmentsPreview.length > 5) {
-                          toast.error('Você pode anexar no máximo 5 arquivos.');
+                          toast.error('You can attach a maximum of 5 files.');
                           return;
                         }
                         for (const file of files) {
                           if (file.size > 5 * 1024 * 1024) {
-                            toast.error(`O arquivo "${file.name}" excede 5MB.`);
+                            toast.error(`The file "${file.name}" exceeds 5MB.`);
                             return;
                           }
                           if (!['application/pdf', 'image/jpeg'].includes(file.type)) {
-                            toast.error(`O arquivo "${file.name}" não é PDF ou JPEG.`);
+                            toast.error(`The file "${file.name}" is not a PDF or JPEG.`);
                             return;
                           }
                         }
@@ -321,7 +321,7 @@ export function MaintenanceRequestForm({ requesterName, setIsLoading }: Maintena
                       }}
                     >
                       <UploadCloud className="w-10 h-10 text-primary mb-2 transition-transform duration-200 group-hover:scale-110" />
-                      <span className="text-sm text-muted-foreground text-center select-none">Arraste e solte arquivos PDF/JPEG aqui ou clique para selecionar</span>
+                      <span className="text-sm text-muted-foreground text-center select-none">Drag and drop PDF/JPEG files here or click to select</span>
                       <Input
                         id="attachments"
                         type="file"
@@ -331,16 +331,16 @@ export function MaintenanceRequestForm({ requesterName, setIsLoading }: Maintena
                         onChange={e => {
                           const files = Array.from(e.target.files || []);
                           if (files.length + attachmentsPreview.length > 5) {
-                            toast.error('Você pode anexar no máximo 5 arquivos.');
+                            toast.error('You can attach a maximum of 5 files.');
                             return;
                           }
                           for (const file of files) {
                             if (file.size > 5 * 1024 * 1024) {
-                              toast.error(`O arquivo "${file.name}" excede 5MB.`);
+                              toast.error(`The file "${file.name}" exceeds 5MB.`);
                               return;
                             }
                             if (!['application/pdf', 'image/jpeg'].includes(file.type)) {
-                              toast.error(`O arquivo "${file.name}" não é PDF ou JPEG.`);
+                              toast.error(`The file "${file.name}" is not a PDF or JPEG.`);
                               return;
                             }
                           }
@@ -350,7 +350,7 @@ export function MaintenanceRequestForm({ requesterName, setIsLoading }: Maintena
                         }}
                         className="absolute inset-0 opacity-0 cursor-pointer"
                         style={{ zIndex: 2 }}
-                        aria-label="Selecionar arquivos para anexar"
+                        aria-label="Select files to attach"
                       />
                     </div>
                     {attachmentsPreview.length > 0 && (
@@ -360,7 +360,7 @@ export function MaintenanceRequestForm({ requesterName, setIsLoading }: Maintena
                             <span className="truncate max-w-[120px]" title={file.name}>{file.name}</span>
                             <button
                               type="button"
-                              aria-label={`Remover anexo ${file.name}`}
+                              aria-label={`Remove attachment ${file.name}`}
                               className="ml-1 text-red-500 hover:text-red-700 transition-colors duration-150 p-1 rounded-full focus:outline-none focus:ring-2 focus:ring-red-400"
                               onClick={() => {
                                 const newFiles = attachmentsPreview.filter((_, i) => i !== idx);
@@ -387,10 +387,10 @@ export function MaintenanceRequestForm({ requesterName, setIsLoading }: Maintena
                       ) : (
                         <Send className="h-5 w-5" />
                       )}
-                      {form.formState.isSubmitting ? 'Enviando...' : 'Enviar Requisição'}
+                      {form.formState.isSubmitting ? 'Sending...' : 'Send Request'}
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent side="top">Enviar requisição para aprovação</TooltipContent>
+                  <TooltipContent side="top">Send request for approval</TooltipContent>
                 </Tooltip>
               </TooltipProvider>
             </form>

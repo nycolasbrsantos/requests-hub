@@ -58,44 +58,44 @@ export async function generateRequestPdf(request: {
         <Image src={cabecalhoBuffer} style={styles.logo} />
         <View style={{ position: 'relative', zIndex: 1 }}>
           {/* Conteúdo principal do PDF */}
-          <Text style={styles.institution}>Solicitações - RequestsHub</Text>
-          <Text style={styles.header}>Requisição de Compras</Text>
-          <Text style={styles.statusFinal}>Status Atual: <Text>{request.status}</Text></Text>
+          <Text style={styles.institution}>Requests - RequestsHub</Text>
+          <Text style={styles.header}>Purchase Request</Text>
+          <Text style={styles.statusFinal}>Current Status: <Text>{request.status}</Text></Text>
           <View style={styles.section}>
             <View style={styles.row}>
               <Text>
-                <Text style={styles.label}>Nº:</Text>{' '}{request.customId}{' '}
-                <Text style={styles.label}>Data:</Text>{' '}{new Date(request.createdAt).toLocaleString('pt-BR')}{' '}
+                <Text style={styles.label}>No.:</Text>{' '}{request.customId}{' '}
+                <Text style={styles.label}>Date:</Text>{' '}{new Date(request.createdAt).toLocaleString('en-US')}{' '}
               </Text>
             </View>
             <View style={styles.row}>
               <Text>
-                <Text style={styles.label}>Solicitante:</Text>{' '}{request.requesterName}{' '}
+                <Text style={styles.label}>Requester:</Text>{' '}{request.requesterName}{' '}
                 <Text style={styles.label}>Status:</Text>{' '}{request.status}{' '}
               </Text>
             </View>
           </View>
           <View style={styles.section}>
             <Text>
-              <Text style={styles.label}>Produto:</Text>{' '}{request.productName || '-'}{' '}
-              <Text style={styles.label}>Quantidade:</Text>{' '}{request.quantity || '-'}{' '}
-              <Text style={styles.label}>Preço Unitário:</Text>{' '}{request.unitPriceInCents || '-'}{' '}
-              <Text style={styles.label}>Fornecedor:</Text>{' '}{request.supplier || '-'}{' '}
-              <Text style={styles.label}>Prioridade:</Text>{' '}{request.priority || '-'}{' '}
+              <Text style={styles.label}>Product:</Text>{' '}{request.productName || '-'}{' '}
+              <Text style={styles.label}>Quantity:</Text>{' '}{request.quantity || '-'}{' '}
+              <Text style={styles.label}>Unit Price:</Text>{' '}{request.unitPriceInCents || '-'}{' '}
+              <Text style={styles.label}>Supplier:</Text>{' '}{request.supplier || '-'}{' '}
+              <Text style={styles.label}>Priority:</Text>{' '}{request.priority || '-'}{' '}
             </Text>
           </View>
           <View style={styles.section}>
             <Text>
-              <Text style={styles.label}>Descrição:</Text>{' '}{request.description || '-'}{' '}
+              <Text style={styles.label}>Description:</Text>{' '}{request.description || '-'}{' '}
             </Text>
           </View>
           {/* Lista de anexos em tabela */}
           {request.attachments && request.attachments.length > 0 && (
             <View style={[styles.section, { marginTop: 8 }]}> 
-              <Text style={[styles.label, { marginBottom: 4 }]}>Anexos</Text>
+              <Text style={[styles.label, { marginBottom: 4 }]}>Attachments</Text>
               <View style={styles.table}>
                 <View style={styles.tableHeader}>
-                  <Text style={styles.tableCellHeader}>Nome</Text>
+                  <Text style={styles.tableCellHeader}>Name</Text>
                   <Text style={styles.tableCellHeader}>Link</Text>
                 </View>
                 {request.attachments.map((att, idx) => (
@@ -110,13 +110,13 @@ export async function generateRequestPdf(request: {
           {/* Linha do tempo e comentários com agrupamento visual */}
           {request.statusHistory && request.statusHistory.length > 0 && (
             <View style={[styles.section, { marginTop: 16 }]}> 
-              <Text style={[styles.label, { marginBottom: 6 }]}>Linha do Tempo e Comentários</Text>
+              <Text style={[styles.label, { marginBottom: 6 }]}>Timeline & Comments</Text>
               {request.statusHistory.map((h, idx) => (
                 <View key={idx} style={styles.timelineBlock}>
                   <Text style={styles.timelineStatus}>{h.status}</Text>
-                  <Text style={styles.timelineDate}>{new Date(h.changedAt).toLocaleString('pt-BR')}</Text>
+                  <Text style={styles.timelineDate}>{new Date(h.changedAt).toLocaleString('en-US')}</Text>
                   <Text>
-                    <Text style={styles.label}>Por:</Text>{' '}{h.changedBy}
+                    <Text style={styles.label}>By:</Text>{' '}{h.changedBy}
                   </Text>
                   {h.comment && (
                     <Text style={styles.timelineComment}>{h.comment}</Text>
@@ -125,7 +125,7 @@ export async function generateRequestPdf(request: {
               ))}
             </View>
           )}
-          <Text style={styles.footer}>Gerado em {new Date().toLocaleString('pt-BR')}</Text>
+          <Text style={styles.footer}>Generated at {new Date().toLocaleString('en-US')}</Text>
         </View>
         {/* Rodapé visual institucional alinhado à direita */}
         <Image src={rodapeBuffer} style={{ width: 420, height: 60, objectFit: 'cover', position: 'absolute', right: 0, bottom: 0 }} />

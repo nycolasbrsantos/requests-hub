@@ -50,14 +50,14 @@ export default async function RequestsPage() {
           <div className="flex flex-col sm:flex-row sm:items-center gap-3 w-full justify-between">
             <div className="flex items-center gap-3">
               <Link href="/home">
-                <Button variant="outline" className="flex items-center gap-2" aria-label="Voltar para Home">
+                <Button variant="outline" className="flex items-center gap-2" aria-label="Back to Home">
                   <ArrowLeft className="w-5 h-5" />
                 </Button>
               </Link>
               <ClipboardList className="w-8 h-8 text-primary" />
               <div>
-                <CardTitle className="text-2xl font-bold">Painel de Requisições</CardTitle>
-                <p className="text-muted-foreground text-sm">Acompanhe o status das suas requisições, filtre por status ou tipo e acesse detalhes ou histórico.</p>
+                <CardTitle className="text-2xl font-bold">Requests Panel</CardTitle>
+                <p className="text-muted-foreground text-sm">Track the status of your requests, filter by status or type, and access details or history.</p>
               </div>
             </div>
           </div>
@@ -67,35 +67,35 @@ export default async function RequestsPage() {
           <div className="space-y-10">
             <section>
               <div className="flex items-center gap-2 mb-2">
-                <h2 className="text-lg font-bold">Pendentes</h2>
+                <h2 className="text-lg font-bold">Pending</h2>
                 <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">{pendingRequests.length}</span>
               </div>
               <RequestsTable requests={pendingRequests} />
             </section>
             <section>
               <div className="flex items-center gap-2 mb-2">
-                <h2 className="text-lg font-bold">Aprovadas</h2>
+                <h2 className="text-lg font-bold">Approved</h2>
                 <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">{approvedRequests.length}</span>
               </div>
               <RequestsTable requests={approvedRequests} />
             </section>
             <section>
               <div className="flex items-center gap-2 mb-2">
-                <h2 className="text-lg font-bold">Em Andamento</h2>
+                <h2 className="text-lg font-bold">In Progress</h2>
                 <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">{inProgressRequests.length}</span>
               </div>
               <RequestsTable requests={inProgressRequests} />
             </section>
             <section>
               <div className="flex items-center gap-2 mb-2">
-                <h2 className="text-lg font-bold">Aguardando Entrega</h2>
+                <h2 className="text-lg font-bold">Awaiting Delivery</h2>
                 <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">{awaitingDeliveryRequests.length}</span>
               </div>
               <RequestsTable requests={awaitingDeliveryRequests} />
             </section>
             <section>
               <div className="flex items-center gap-2 mb-2">
-                <h2 className="text-lg font-bold">Concluídas / Rejeitadas</h2>
+                <h2 className="text-lg font-bold">Completed / Rejected</h2>
                 <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">{finishedRequests.length}</span>
               </div>
               <RequestsTable requests={finishedRequests} />

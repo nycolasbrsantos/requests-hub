@@ -18,13 +18,13 @@ export const requestTypeEnum = pgEnum('request_type', [
 
 // Enum para o status das requisições
 export const requestStatusEnum = pgEnum('request_status', [
-  'pending',           // PR criada, aguardando aprovação de necessidade
-  'need_approved',     // PR aprovada, agora é PO aguardando aprovação financeira
-  'finance_approved',  // PO aprovada financeiramente, aguardando execução
-  'awaiting_delivery', // PO aguardando entrega
-  'rejected',          // Rejeitada em qualquer etapa
-  'in_progress',       // Em execução
-  'completed',         // Concluída
+  'pending',           // PR created, awaiting approval of necessity
+  'need_approved',     // PR approved, now it's PO awaiting financial approval
+  'finance_approved',  // PO approved financially, awaiting execution
+  'awaiting_delivery', // PO awaiting delivery
+  'rejected',          // Rejected at any stage
+  'in_progress',       // In progress
+  'completed',         // Completed
 ])
 
 // Enum para a prioridade (usado em Manutenção e T.I.)
@@ -34,11 +34,11 @@ export const requestPriorityEnum = pgEnum('request_priority', [
   'high',
 ])
 
-// Enum para os papéis de usuário
+// Enum for user roles
 export const userRoleEnum = pgEnum('user_role', [
   'admin',
   'supervisor',
-  'encarregado',
+  'manager',
   'user',
 ])
 

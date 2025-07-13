@@ -23,21 +23,21 @@ interface RequestsTableProps {
 }
 
 const statusOptions = [
-  { value: 'all', label: 'Todos os status' },
-  { value: 'pending', label: 'PR Pendente' },
-  { value: 'need_approved', label: 'PR Aprovada' },
-  { value: 'finance_approved', label: 'PO Aprovada' },
-  { value: 'awaiting_delivery', label: 'Aguardando Entrega' },
-  { value: 'rejected', label: 'Rejeitada' },
-  { value: 'in_progress', label: 'Em Execução' },
-  { value: 'completed', label: 'Concluída' },
+  { value: 'all', label: 'All statuses' },
+  { value: 'pending', label: 'PR Pending' },
+  { value: 'need_approved', label: 'PR Approved' },
+  { value: 'finance_approved', label: 'PO Approved' },
+  { value: 'awaiting_delivery', label: 'Awaiting Delivery' },
+  { value: 'rejected', label: 'Rejected' },
+  { value: 'in_progress', label: 'In Progress' },
+  { value: 'completed', label: 'Completed' },
 ];
 
 const typeOptions = [
-  { value: 'all', label: 'Todos os tipos' },
-  { value: 'purchase', label: 'Compras' },
-  { value: 'maintenance', label: 'Manutenção' },
-  { value: 'it_ticket', label: 'T.I.' },
+  { value: 'all', label: 'All types' },
+  { value: 'purchase', label: 'Purchase' },
+  { value: 'maintenance', label: 'Maintenance' },
+  { value: 'it_ticket', label: 'IT Support' },
 ];
 
 export default function RequestsTable({ requests, isLoading = false }: RequestsTableProps) {
@@ -148,13 +148,13 @@ export default function RequestsTable({ requests, isLoading = false }: RequestsT
           <thead>
             <tr className="border-b">
               <th className="px-4 py-2 text-left whitespace-nowrap text-[13px] font-semibold w-32">ID</th>
-              <th className="px-4 py-2 text-left whitespace-nowrap text-[13px] max-w-xs">Título</th>
-              <th className="px-4 py-2 text-left whitespace-nowrap text-[13px] font-semibold w-24">Tipo</th>
+              <th className="px-4 py-2 text-left whitespace-nowrap text-[13px] max-w-xs">Title</th>
+              <th className="px-4 py-2 text-left whitespace-nowrap text-[13px] font-semibold w-24">Type</th>
               <th className="px-4 py-2 text-left whitespace-nowrap text-[13px] font-semibold w-24">Status</th>
-              <th className="px-4 py-2 text-left whitespace-nowrap text-[13px] max-w-xs">Solicitante</th>
-              <th className="px-4 py-2 text-left whitespace-nowrap text-[13px] font-semibold w-32" onClick={() => handleSort('createdAt')}>Data {sort.key === 'createdAt' ? (sort.direction === 'asc' ? <ArrowUp className="inline w-4 h-4 ml-1 text-primary" /> : <ArrowDown className="inline w-4 h-4 ml-1 text-primary" />) : <ArrowUpDown className="inline w-4 h-4 ml-1 text-muted-foreground" />}</th>
-              <th className="px-4 py-2 text-left whitespace-nowrap text-[13px] font-semibold w-24">Anexos</th>
-              <th className="px-4 py-2 text-left whitespace-nowrap text-[13px] font-semibold w-24">Ações</th>
+              <th className="px-4 py-2 text-left whitespace-nowrap text-[13px] max-w-xs">Requester</th>
+              <th className="px-4 py-2 text-left whitespace-nowrap text-[13px] font-semibold w-32" onClick={() => handleSort('createdAt')}>Date {sort.key === 'createdAt' ? (sort.direction === 'asc' ? <ArrowUp className="inline w-4 h-4 ml-1 text-primary" /> : <ArrowDown className="inline w-4 h-4 ml-1 text-primary" />) : <ArrowUpDown className="inline w-4 h-4 ml-1 text-muted-foreground" />}</th>
+              <th className="px-4 py-2 text-left whitespace-nowrap text-[13px] font-semibold w-24">Attachments</th>
+              <th className="px-4 py-2 text-left whitespace-nowrap text-[13px] font-semibold w-24">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -174,7 +174,7 @@ export default function RequestsTable({ requests, isLoading = false }: RequestsT
         </table>
         <div className="flex items-center justify-center py-8">
           <Loader2 className="w-6 h-6 animate-spin text-primary" />
-          <span className="ml-2 text-primary">Filtrando...</span>
+          <span className="ml-2 text-primary">Filtering...</span>
         </div>
       </div>
     );
@@ -184,8 +184,8 @@ export default function RequestsTable({ requests, isLoading = false }: RequestsT
     return (
       <div className="border rounded-md p-8 bg-white dark:bg-zinc-900 flex flex-col items-center justify-center gap-2">
         <FileQuestion className="w-10 h-10 text-muted-foreground mb-2" />
-        <p className="text-center text-muted-foreground font-medium">Nenhuma requisição encontrada com os filtros atuais.</p>
-        <p className="text-center text-xs text-muted-foreground">Tente ajustar os filtros ou limpar todos para ver mais resultados.</p>
+        <p className="text-center text-muted-foreground font-medium">No requests found with current filters.</p>
+        <p className="text-center text-xs text-muted-foreground">Try adjusting filters or clearing all to see more results.</p>
       </div>
     );
   }
@@ -193,16 +193,16 @@ export default function RequestsTable({ requests, isLoading = false }: RequestsT
   return (
     <div>
       {role === 'admin' && (
-        <div className="mb-4 p-2 rounded bg-green-100 text-green-800 text-sm font-medium">Visão de administrador: você pode ver e gerenciar todas as requisições.</div>
+        <div className="mb-4 p-2 rounded bg-green-100 text-green-800 text-sm font-medium">Admin view: you can see and manage all requests.</div>
       )}
       {role === 'supervisor' && (
-        <div className="mb-4 p-2 rounded bg-blue-100 text-blue-800 text-sm font-medium">Visão de supervisor: você pode aprovar, reprovar e encaminhar requisições.</div>
+        <div className="mb-4 p-2 rounded bg-blue-100 text-blue-800 text-sm font-medium">Supervisor view: you can approve, reject, and forward requests.</div>
       )}
-      {role === 'encarregado' && (
-        <div className="mb-4 p-2 rounded bg-yellow-100 text-yellow-800 text-sm font-medium">Visão de encarregado: você pode executar e finalizar requisições do seu setor.</div>
+      {role === 'manager' && (
+        <div className="mb-4 p-2 rounded bg-yellow-100 text-yellow-800 text-sm font-medium">Manager view: you can execute and complete requests from your department.</div>
       )}
       {role === 'user' && (
-        <div className="mb-4 p-2 rounded bg-gray-100 text-gray-800 text-sm font-medium">Visão de usuário: você pode criar e consultar suas próprias requisições.</div>
+        <div className="mb-4 p-2 rounded bg-gray-100 text-gray-800 text-sm font-medium">User view: you can create and query your own requests.</div>
       )}
       {role === 'user' && (
         <div className="flex justify-end mb-4">
@@ -211,12 +211,12 @@ export default function RequestsTable({ requests, isLoading = false }: RequestsT
             className="gap-2"
             onClick={() => router.push('/requests/add?type=purchase')}
           >
-            <Plus className="w-5 h-5" /> Nova Requisição
+            <Plus className="w-5 h-5" /> New Request
           </Button>
         </div>
       )}
       <div className="mb-2 text-sm text-muted-foreground">
-        {totalFiltered === 1 ? '1 requisição encontrada' : `${totalFiltered} requisições encontradas`}
+        {totalFiltered === 1 ? '1 request found' : `${totalFiltered} requests found`}
       </div>
       <div className="flex flex-wrap gap-2 mb-4 items-end w-full sm:flex-col md:flex-row">
         <div className="relative w-full sm:w-full md:w-64">
@@ -224,7 +224,7 @@ export default function RequestsTable({ requests, isLoading = false }: RequestsT
           <Input
             value={search}
             onChange={e => setSearch(e.target.value)}
-            placeholder="Buscar por ID ou status"
+            placeholder="Search by ID or status"
             className="pl-9 pr-3 py-2 text-sm rounded-md"
           />
         </div>
@@ -240,7 +240,7 @@ export default function RequestsTable({ requests, isLoading = false }: RequestsT
         </Select>
         <Select value={type} onValueChange={setType}>
           <SelectTrigger className="w-full sm:w-40">
-            <SelectValue placeholder="Tipo" />
+            <SelectValue placeholder="Type" />
           </SelectTrigger>
           <SelectContent>
             {typeOptions.map(opt => (
@@ -267,7 +267,7 @@ export default function RequestsTable({ requests, isLoading = false }: RequestsT
           />
         </div>
         <Button variant="ghost" onClick={handleClearFilters} className="ml-0 sm:ml-2 flex items-center gap-1 text-destructive min-h-10 min-w-10">
-          <XCircle className="w-4 h-4" /> Limpar
+          <XCircle className="w-4 h-4" /> Clear Filters
         </Button>
       </div>
       <div className="w-full overflow-x-auto bg-white rounded-2xl shadow-md border border-muted p-4 md:p-6">
@@ -283,11 +283,11 @@ export default function RequestsTable({ requests, isLoading = false }: RequestsT
             <thead>
               <tr className="border-b">
                 <th className="px-4 py-2 text-left whitespace-nowrap text-[13px] font-semibold w-32">ID</th>
-                <th className="px-4 py-2 text-left whitespace-nowrap text-[13px] font-semibold w-24">Tipo</th>
+                <th className="px-4 py-2 text-left whitespace-nowrap text-[13px] font-semibold w-24">Type</th>
                 <th className="px-4 py-2 text-left whitespace-nowrap text-[13px] font-semibold hidden md:table-cell w-32">Status</th>
-                <th className="px-4 py-2 text-left whitespace-nowrap text-[13px] font-semibold w-full" onClick={() => handleSort('requesterName')}>Solicitante {sort.key === 'requesterName' ? (sort.direction === 'asc' ? <ArrowUp className="inline w-4 h-4 ml-1 text-primary" /> : <ArrowDown className="inline w-4 h-4 ml-1 text-primary" />) : <ArrowUpDown className="inline w-4 h-4 ml-1 text-muted-foreground" />}</th>
-                <th className="px-4 py-2 text-left whitespace-nowrap text-[13px] font-semibold w-32" onClick={() => handleSort('createdAt')}>Data {sort.key === 'createdAt' ? (sort.direction === 'asc' ? <ArrowUp className="inline w-4 h-4 ml-1 text-primary" /> : <ArrowDown className="inline w-4 h-4 ml-1 text-primary" />) : <ArrowUpDown className="inline w-4 h-4 ml-1 text-muted-foreground" />}</th>
-                <th className="px-4 py-2 text-left whitespace-nowrap text-[13px] font-semibold w-24">Ações</th>
+                <th className="px-4 py-2 text-left whitespace-nowrap text-[13px] font-semibold w-full" onClick={() => handleSort('requesterName')}>Requester {sort.key === 'requesterName' ? (sort.direction === 'asc' ? <ArrowUp className="inline w-4 h-4 ml-1 text-primary" /> : <ArrowDown className="inline w-4 h-4 ml-1 text-primary" />) : <ArrowUpDown className="inline w-4 h-4 ml-1 text-muted-foreground" />}</th>
+                <th className="px-4 py-2 text-left whitespace-nowrap text-[13px] font-semibold w-32" onClick={() => handleSort('createdAt')}>Date {sort.key === 'createdAt' ? (sort.direction === 'asc' ? <ArrowUp className="inline w-4 h-4 ml-1 text-primary" /> : <ArrowDown className="inline w-4 h-4 ml-1 text-primary" />) : <ArrowUpDown className="inline w-4 h-4 ml-1 text-muted-foreground" />}</th>
+                <th className="px-4 py-2 text-left whitespace-nowrap text-[13px] font-semibold w-24">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -302,18 +302,18 @@ export default function RequestsTable({ requests, isLoading = false }: RequestsT
                             {req.type === 'purchase' && (
                               <ShoppingCart
                                 className={`w-5 h-5 ${req.priority === 'high' ? 'text-red-600' : req.priority === 'medium' ? 'text-yellow-500' : req.priority === 'low' ? 'text-green-600' : 'text-primary'}`}
-                                aria-label="Compra"
+                                aria-label="Purchase"
                               />
                             )}
                             {req.type === 'maintenance' && (
                               <Wrench
                                 className={`w-5 h-5 ${req.priority === 'high' ? 'text-red-600' : req.priority === 'medium' ? 'text-yellow-500' : req.priority === 'low' ? 'text-green-600' : 'text-yellow-600'}`}
-                                aria-label="Manutenção"
+                                aria-label="Maintenance"
                               />
                             )}
                           </span>
                         </TooltipTrigger>
-                        <TooltipContent>{req.type === 'purchase' ? 'Compra' : req.type === 'maintenance' ? 'Manutenção' : 'T.I.'}</TooltipContent>
+                        <TooltipContent>{req.type === 'purchase' ? 'Purchase' : req.type === 'maintenance' ? 'Maintenance' : 'IT Support'}</TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
                   </td>
@@ -325,7 +325,7 @@ export default function RequestsTable({ requests, isLoading = false }: RequestsT
                   <td className="px-4 py-2 w-24 space-x-2">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <button className="p-2 rounded hover:bg-muted transition" aria-label="Ações">
+                        <button className="p-2 rounded hover:bg-muted transition" aria-label="Actions">
                           <MoreVertical className="w-5 h-5" />
                         </button>
                       </DropdownMenuTrigger>
@@ -334,20 +334,20 @@ export default function RequestsTable({ requests, isLoading = false }: RequestsT
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <DropdownMenuItem onClick={() => setOpenDetailsId(req.customId)}>
-                                Visualizar detalhes
+                                View Details
                               </DropdownMenuItem>
                             </TooltipTrigger>
-                            <TooltipContent>Ver todos os dados da requisição</TooltipContent>
+                            <TooltipContent>View all request data</TooltipContent>
                           </Tooltip>
                         </TooltipProvider>
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <DropdownMenuItem onClick={() => setOpenHistoryId(req.customId)}>
-                                <Clock className="w-4 h-4 mr-2 text-muted-foreground" /> Ver histórico
+                                <Clock className="w-4 h-4 mr-2 text-muted-foreground" /> View History
                               </DropdownMenuItem>
                             </TooltipTrigger>
-                            <TooltipContent>Ver histórico de status</TooltipContent>
+                            <TooltipContent>View status history</TooltipContent>
                           </Tooltip>
                         </TooltipProvider>
                         {(role !== 'user') && ['pending', 'need_approved', 'finance_approved', 'in_progress'].includes(req.status) && (
@@ -358,7 +358,7 @@ export default function RequestsTable({ requests, isLoading = false }: RequestsT
                                 currentStatus: req.status,
                               })}
                             >
-                              Gerenciar Status
+                              Manage Status
                             </DropdownMenuItem>
                           </>
                         )}
@@ -369,7 +369,7 @@ export default function RequestsTable({ requests, isLoading = false }: RequestsT
                     <Dialog open={openHistoryId === req.customId} onOpenChange={() => setOpenHistoryId(null)}>
                       <DialogContent className="max-w-md">
                         <DialogHeader>
-                          <DialogTitle>Histórico de Status</DialogTitle>
+                          <DialogTitle>Status History</DialogTitle>
                         </DialogHeader>
                         <div className="py-2">
                           {Array.isArray(req.statusHistory) && req.statusHistory.length > 0 ? (
@@ -386,23 +386,23 @@ export default function RequestsTable({ requests, isLoading = false }: RequestsT
                                       <StatusBadge status={h.status as 'pending' | 'need_approved' | 'finance_approved' | 'rejected' | 'in_progress' | 'completed'} />
                                     )}
                                     <span className="text-[13px] text-muted-foreground">
-                                      {h.status === 'attachment_added' && 'Anexo adicionado'}
-                                      {h.status === 'attachment_removed' && 'Anexo removido'}
+                                      {h.status === 'attachment_added' && 'Attachment added'}
+                                      {h.status === 'attachment_removed' && 'Attachment removed'}
                                       {h.status !== 'attachment_added' && h.status !== 'attachment_removed' && null}
                                     </span>
                                     <span className="text-[13px] text-muted-foreground">{dayjs(h.changedAt).format('DD/MM/YYYY HH:mm')}</span>
                                   </div>
                                   <div className="text-[13px] text-muted-foreground mt-1">
-                                    por <span className="font-medium text-foreground">{h.changedBy}</span>
+                                    by <span className="font-medium text-foreground">{h.changedBy}</span>
                                     {h.comment && (
-                                      <div className="mt-1 text-[13px] italic text-muted-foreground">Comentário: {h.comment}</div>
+                                      <div className="mt-1 text-[13px] italic text-muted-foreground">Comment: {h.comment}</div>
                                     )}
                                   </div>
                                 </li>
                               ))}
                             </ol>
                           ) : (
-                            <div className="text-[13px] text-muted-foreground">Nenhum histórico registrado para esta requisição.</div>
+                            <div className="text-[13px] text-muted-foreground">No history recorded for this request.</div>
                           )}
                         </div>
                       </DialogContent>
@@ -415,15 +415,15 @@ export default function RequestsTable({ requests, isLoading = false }: RequestsT
         </AnimatePresence>
         <div className="flex items-center justify-between mt-4">
           <span className="text-[13px] text-muted-foreground">
-            Exibindo {paginatedRequests.length} de {filteredRequests.length} requisições
+            Displaying {paginatedRequests.length} of {filteredRequests.length} requests
           </span>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>
-              Anterior
+              Previous
             </Button>
-            <span className="text-[13px] px-2">Página {page} de {totalPages}</span>
+            <span className="text-[13px] px-2">Page {page} of {totalPages}</span>
             <Button variant="outline" size="sm" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}>
-              Próxima
+              Next
             </Button>
           </div>
         </div>
@@ -438,7 +438,7 @@ export default function RequestsTable({ requests, isLoading = false }: RequestsT
           requestId={approvalModal.requestId}
           currentStatus={approvalModal.currentStatus}
           userRole={role || 'user'}
-          userName={session?.user?.name || 'Usuário'}
+          userName={session?.user?.name || 'User'}
         />
       )}
     </div>
