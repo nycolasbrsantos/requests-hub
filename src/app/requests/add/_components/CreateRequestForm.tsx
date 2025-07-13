@@ -37,7 +37,7 @@ export function CreateRequestForm({ requesterName, isLoading, setIsLoading }: Cr
   const loadingToastId = useRef<string | number | null>(null);
   const [isLoadingSkeleton, setIsLoadingSkeleton] = useState(true);
 
-  const form = useForm<z.infer<typeof createRequestSchema>>({
+  const form = useForm<ReturnType<typeof createRequestSchema.parse>>({
     resolver: zodResolver(createRequestSchema),
     defaultValues: {
       type: undefined,
@@ -99,7 +99,7 @@ export function CreateRequestForm({ requesterName, isLoading, setIsLoading }: Cr
     return () => window.removeEventListener('popstate', handler);
   }, [form.formState.isSubmitting]);
 
-  async function onSubmit(values: z.infer<typeof createRequestSchema>) {
+  async function onSubmit(values: ReturnType<typeof createRequestSchema.parse>) {
     setIsLoading(true);
     try {
       await createRequest({
