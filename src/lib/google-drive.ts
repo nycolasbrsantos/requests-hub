@@ -130,6 +130,80 @@ export async function getFileInfo(fileId: string) {
   return response.data;
 }
 
+/**
+ * Cria uma pasta para PO dentro da pasta da PR
+ * @param prFolderId - ID da pasta da PR
+ * @param poNumber - Número da PO
+ * @returns ID da pasta da PO criada
+ */
+export async function createPOFolder(prFolderId: string, poNumber: string): Promise<string> {
+  try {
+    const drive = await getDriveClient();
+    const folderName = `PO-${poNumber}`;
+    const folderMetadata = {
+      name: folderName,
+      parents: [prFolderId],
+      mimeType: 'application/vnd.google-apps.folder',
+    };
+
+    const response = await drive.files.create({
+      requestBody: folderMetadata,
+      fields: 'id',
+    });
+
+    return response.data.id || '';
+  } catch (error) {
+    console.error('Erro ao criar pasta da PO:', error);
+    throw new Error('Falha ao criar pasta da PO no Google Drive');
+  }
+}
+
+/**
+ * Move arquivos para a pasta da PO
+ * @param fileIds - Array de IDs dos arquivos
+ * @param poFolderId - ID da pasta da PO
+ */
+export async function moveFilesToPOFolder(fileIds: string[], poFolderId: string): Promise<void> {
+  try {
+    const drive = await getDriveClient();
+    for (const fileId of fileIds) {
+      await drive.files.update({
+        fileId,
+        addParents: poFolderId,
+        removeParents: 'root', // Remove da pasta raiz
+        fields: 'id, parents',
+      });
+    }
+  } catch (error) {
+    console.error('Erro ao mover arquivos para pasta da PO:', error);
+    throw new Error('Falha ao mover arquivos para pasta da PO');
+  }
+}
+
+/**
+ * Organiza arquivos da PO: cria pasta e move arquivos
+ * @param prFolderId - ID da pasta da PR
+ * @param poNumber - Número da PO
+ * @param fileIds - IDs dos arquivos da PO
+ * @returns ID da pasta da PO
+ */
+export async function organizePOFiles(prFolderId: string, poNumber: string, fileIds: string[]): Promise<string> {
+  try {
+    // 1. Criar pasta da PO
+    const poFolderId = await createPOFolder(prFolderId, poNumber);
+    
+    // 2. Mover arquivos para a pasta da PO
+    if (fileIds.length > 0) {
+      await moveFilesToPOFolder(fileIds, poFolderId);
+    }
+    
+    return poFolderId;
+  } catch (error) {
+    console.error('Erro ao organizar arquivos da PO:', error);
+    throw new Error('Falha ao organizar arquivos da PO');
+  }
+}
+
 export function getRootFolderIdByType(type: 'purchase' | 'it_support' | 'maintenance'): string {
   let folderId: string | undefined;
   if (type === 'purchase') folderId = process.env.DRIVE_PURCHASES_FOLDER_ID;

@@ -5,17 +5,15 @@ import dayjs from 'dayjs';
 import { StatusBadge } from './StatusBadge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
-import { MoreVertical, Info, CheckCircle2, XCircle, ArrowUpDown, ArrowUp, ArrowDown, Loader2, FileQuestion, Clock, Paperclip, Trash2, Plus, Search, Calendar, ShoppingCart, Wrench } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { MoreVertical, ArrowUpDown, ArrowUp, ArrowDown, FileQuestion, Clock, Paperclip, Trash2, Plus, Search, Calendar, ShoppingCart, Wrench, Loader2, XCircle } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { useSession } from 'next-auth/react';
-import { toast } from 'sonner';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { AnimatePresence, motion } from 'framer-motion';
-import { updateRequestStatus } from '@/actions/update-request-status';
-import { useAction } from 'next-safe-action/hooks';
 import RequestDetailsDialog from './RequestDetailsDialog';
+import { ApprovalModal } from './ApprovalModal';
 import { useRouter } from 'next/navigation';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -26,10 +24,12 @@ interface RequestsTableProps {
 
 const statusOptions = [
   { value: 'all', label: 'Todos os status' },
-  { value: 'pending', label: 'Pendente' },
-  { value: 'approved', label: 'Aprovada' },
+  { value: 'pending', label: 'PR Pendente' },
+  { value: 'need_approved', label: 'PR Aprovada' },
+  { value: 'finance_approved', label: 'PO Aprovada' },
+  { value: 'awaiting_delivery', label: 'Aguardando Entrega' },
   { value: 'rejected', label: 'Rejeitada' },
-  { value: 'in_progress', label: 'Em andamento' },
+  { value: 'in_progress', label: 'Em Execução' },
   { value: 'completed', label: 'Concluída' },
 ];
 
@@ -55,23 +55,13 @@ export default function RequestsTable({ requests, isLoading = false }: RequestsT
   const [sort, setSort] = useState<{ key: keyof Request | 'customId'; direction: 'asc' | 'desc' }>({ key: 'createdAt', direction: 'desc' });
   const PAGE_SIZE = 10;
   const [isFiltering, setIsFiltering] = useState(false);
-  const [confirmDialog, setConfirmDialog] = useState<null | {
-    action: 'pending' | 'approved' | 'rejected' | 'in_progress' | 'completed' | 'approve' | 'reject',
-    req: any,
+  const [approvalModal, setApprovalModal] = useState<null | {
+    requestId: string;
+    currentStatus: string;
   }>(null);
-  const [isConfirming, setIsConfirming] = useState(false);
 
-  const { execute: executeUpdateStatus, status: updateStatusState } = useAction(updateRequestStatus, {
-    onSuccess: (data) => {
-      if (data.data && typeof data.data === 'object' && 'success' in data.data && data.data.success)
-        toast.success(data.data.success, { icon: <CheckCircle2 className="text-green-500" /> });
-      if (data.data && typeof data.data === 'object' && 'error' in data.data && data.data.error)
-        toast.error(data.data.error, { icon: <XCircle className="text-red-500" /> });
-    },
-    onError: () => {
-      toast.error('Erro ao atualizar status.', { icon: <XCircle className="text-red-500" /> });
-    },
-  });
+
+
 
   const filteredRequests = useMemo(() => {
     return requests.filter((req) => {
@@ -149,39 +139,7 @@ export default function RequestsTable({ requests, isLoading = false }: RequestsT
     setDateEnd('');
   };
 
-  function handleAction(action: 'approve' | 'reject' | 'in_progress' | 'completed', req: any) {
-    setConfirmDialog({ action, req });
-  }
 
-  async function handleConfirm() {
-    if (!confirmDialog) return;
-    setIsConfirming(true);
-    try {
-      let status: 'pending' | 'approved' | 'rejected' | 'in_progress' | 'completed';
-      if (confirmDialog.action === 'approve') status = 'approved';
-      else if (confirmDialog.action === 'reject') status = 'rejected';
-      else status = confirmDialog.action;
-      const result: any = await executeUpdateStatus({
-        customId: confirmDialog.req.customId,
-        status,
-        changedBy: session?.user?.name ?? undefined,
-        comment: '',
-      });
-      console.log('Resultado da action:', result);
-      if (result?.data?.success) {
-        toast.success(result.data.success);
-      } else if (result?.data?.error) {
-        toast.error(result.data.error);
-      } else {
-        toast.error('Erro ao atualizar status.');
-      }
-      setConfirmDialog(null);
-    } catch (e) {
-      toast.error('Erro ao atualizar status.');
-    } finally {
-      setIsConfirming(false);
-    }
-  }
 
   if (isLoading || isFiltering) {
     return (
@@ -392,49 +350,22 @@ export default function RequestsTable({ requests, isLoading = false }: RequestsT
                             <TooltipContent>Ver histórico de status</TooltipContent>
                           </Tooltip>
                         </TooltipProvider>
-                        {(role !== 'user') && req.status === 'pending' && (
+                        {(role !== 'user') && ['pending', 'need_approved', 'finance_approved', 'in_progress'].includes(req.status) && (
                           <>
-                            {(role === 'admin' || role === 'supervisor') && (
-                              <DropdownMenuItem
-                                disabled={updateStatusState === 'executing'}
-                                onClick={() => handleAction('approve', req)}
-                              >
-                                Aprovar
-                              </DropdownMenuItem>
-                            )}
-                            {(role === 'admin' || role === 'supervisor') && (
-                              <DropdownMenuItem
-                                disabled={updateStatusState === 'executing'}
-                                onClick={() => handleAction('reject', req)}
-                              >
-                                Negar
-                              </DropdownMenuItem>
-                            )}
-                            {(role === 'admin' || role === 'supervisor' || role === 'encarregado') && (
-                              <DropdownMenuItem
-                                disabled={updateStatusState === 'executing'}
-                                onClick={() => handleAction('in_progress', req)}
-                              >
-                                Colocar em andamento
-                              </DropdownMenuItem>
-                            )}
+                            <DropdownMenuItem
+                              onClick={() => setApprovalModal({
+                                requestId: req.customId || req.id.toString(),
+                                currentStatus: req.status,
+                              })}
+                            >
+                              Gerenciar Status
+                            </DropdownMenuItem>
                           </>
                         )}
-                        {(role !== 'user') && req.status === 'in_progress' && (
-                          <>
-                            {(role === 'admin' || role === 'encarregado') && (
-                              <DropdownMenuItem
-                                disabled={updateStatusState === 'executing'}
-                                onClick={() => handleAction('completed', req)}
-                              >
-                                Concluir
-                              </DropdownMenuItem>
-                            )}
-                          </>
-                        )}
+
                       </DropdownMenuContent>
                     </DropdownMenu>
-                    <RequestDetailsDialog requestId={req.customId} open={openDetailsId === req.customId} onOpenChange={() => setOpenDetailsId(null)} />
+                    <RequestDetailsDialog requestId={req.customId || req.id.toString()} open={openDetailsId === req.customId} onOpenChange={() => setOpenDetailsId(null)} />
                     <Dialog open={openHistoryId === req.customId} onOpenChange={() => setOpenHistoryId(null)}>
                       <DialogContent className="max-w-md">
                         <DialogHeader>
@@ -452,7 +383,7 @@ export default function RequestsTable({ requests, isLoading = false }: RequestsT
                                     ) : h.status === 'attachment_removed' ? (
                                       <Trash2 className="w-4 h-4 text-red-500" />
                                     ) : (
-                                      <StatusBadge status={h.status as 'pending' | 'approved' | 'rejected' | 'in_progress' | 'completed'} />
+                                      <StatusBadge status={h.status as 'pending' | 'need_approved' | 'finance_approved' | 'rejected' | 'in_progress' | 'completed'} />
                                     )}
                                     <span className="text-[13px] text-muted-foreground">
                                       {h.status === 'attachment_added' && 'Anexo adicionado'}
@@ -497,33 +428,19 @@ export default function RequestsTable({ requests, isLoading = false }: RequestsT
           </div>
         </div>
       </div>
-      <Dialog open={!!confirmDialog} onOpenChange={open => !open && setConfirmDialog(null)}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>
-              {confirmDialog?.action === 'approve' && 'Confirmar Aprovação'}
-              {confirmDialog?.action === 'reject' && 'Confirmar Negação'}
-              {confirmDialog?.action === 'in_progress' && 'Confirmar Início de Andamento'}
-              {confirmDialog?.action === 'completed' && 'Confirmar Conclusão'}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="py-2 text-sm">
-            Tem certeza que deseja <b>{
-              confirmDialog?.action === 'approve' ? 'aprovar' :
-              confirmDialog?.action === 'reject' ? 'negar' :
-              confirmDialog?.action === 'in_progress' ? 'colocar em andamento' :
-              'concluir'
-            }</b> a requisição <b>{confirmDialog?.req?.customId || confirmDialog?.req?.id}</b>?
-          </div>
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setConfirmDialog(null)} disabled={isConfirming}>Cancelar</Button>
-            <Button variant="default" onClick={handleConfirm} disabled={isConfirming}>
-              {isConfirming ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-              Confirmar
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+
+
+      {/* Approval Modal */}
+      {approvalModal && (
+        <ApprovalModal
+          open={!!approvalModal}
+          onOpenChange={(open) => !open && setApprovalModal(null)}
+          requestId={approvalModal.requestId}
+          currentStatus={approvalModal.currentStatus}
+          userRole={role || 'user'}
+          userName={session?.user?.name || 'Usuário'}
+        />
+      )}
     </div>
   );
 } 

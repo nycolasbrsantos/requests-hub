@@ -37,16 +37,18 @@ export async function DELETE(
     // Atualiza histórico da requisição
     const prevHistory = Array.isArray(request?.statusHistory)
       ? request.statusHistory.filter((h): h is {
-          status: 'pending' | 'approved' | 'rejected' | 'in_progress' | 'completed' | 'attachment_added' | 'attachment_removed';
+          status: 'pending' | 'need_approved' | 'finance_approved' | 'rejected' | 'in_progress' | 'completed' | 'attachment_added' | 'attachment_removed';
           changedAt: string;
           changedBy: string;
           comment?: string;
+          poNumber?: string;
         } =>
           h && typeof h === 'object' &&
           typeof h.status === 'string' &&
           [
             'pending',
-            'approved',
+            'need_approved',
+            'finance_approved',
             'rejected',
             'in_progress',
             'completed',
@@ -56,10 +58,11 @@ export async function DELETE(
       )
       : [];
     const newHistory: {
-      status: 'pending' | 'approved' | 'rejected' | 'in_progress' | 'completed' | 'attachment_added' | 'attachment_removed';
+      status: 'pending' | 'need_approved' | 'finance_approved' | 'rejected' | 'in_progress' | 'completed' | 'attachment_added' | 'attachment_removed';
       changedAt: string;
       changedBy: string;
       comment?: string;
+      poNumber?: string;
     }[] = [
       ...prevHistory,
       {

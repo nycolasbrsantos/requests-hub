@@ -8,9 +8,9 @@ import { db } from '@/db'
 import { requests, purchaseRequests, maintenanceRequests, itSupportRequests } from '@/db/schema'
 import { actionClient } from '@/lib/safe-actions'
 import { createRequestSchema } from './schema'
-import { generateRequestPdf } from '@/lib/generate-request-pdf'
 import { uploadFileToFolder, getRootFolderIdByType, createFolder } from '@/lib/google-drive'
 import { reaisToCentavos } from '@/lib/utils'
+import { generatePRPdf } from '@/lib/generate-pr-pdf'
 
 // Se você quiser manter o handler separado:
 const handler = async ({
@@ -41,17 +41,20 @@ const handler = async ({
     const driveFolderId = await createFolder(`REQ-${customId}`, rootFolderId);
 
     // Geração e upload do PDF detalhado da requisição
-    const pdfBuffer = await generateRequestPdf({
+    const pdfBuffer = await generatePRPdf({
       customId: customId,
       createdAt: now.toISOString(),
       requesterName: parsedInput.requesterName ?? '',
       status: 'pending',
       productName: parsedInput.productName ?? undefined,
       quantity: parsedInput.quantity ?? undefined,
-      unitPrice: parsedInput.unitPrice ? String(parsedInput.unitPrice) : undefined,
+      unitPriceInCents: parsedInput.unitPriceInCents ? String(parsedInput.unitPriceInCents) : undefined,
       supplier: parsedInput.supplier ?? undefined,
       priority: parsedInput.priority ?? undefined,
       description: parsedInput.description ?? undefined,
+      needApprovedBy: undefined,
+      statusHistory: [],
+      attachments: [],
     });
     const pdfFileName = `Requisicao-${customId}.pdf`;
     const pdfFile = await uploadFileToFolder(

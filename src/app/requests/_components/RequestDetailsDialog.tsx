@@ -43,7 +43,7 @@ interface StatusHistoryItem {
   comment?: string;
 }
 
-type StatusType = 'pending' | 'approved' | 'rejected' | 'in_progress' | 'completed';
+type StatusType = 'pending' | 'need_approved' | 'finance_approved' | 'awaiting_delivery' | 'rejected' | 'in_progress' | 'completed';
 
 interface RequestDetails {
   id: string;
@@ -58,6 +58,10 @@ interface RequestDetails {
   productName?: string;
   quantity?: number;
   unitPriceInCents?: number;
+  poNumber?: string;
+  needApprovedBy?: string;
+  financeApprovedBy?: string;
+  executedBy?: string;
   attachments: Attachment[];
   statusHistory: StatusHistoryItem[];
   priority?: string;
@@ -67,6 +71,9 @@ interface RequestDetails {
   urgency?: string;
   equipment?: string;
   category?: string;
+  carrier?: string;
+  trackingCode?: string;
+  deliveryProof?: Attachment[];
 }
 
 interface RequestDetailsDialogProps {
@@ -172,6 +179,26 @@ function RequestSpecificDetails({ request }: { request: RequestDetails }) {
         {request.quantity !== undefined && <div><b>Quantidade:</b> {request.quantity}</div>}
         {request.unitPriceInCents !== undefined && <div><b>Preço Unitário:</b> R$ {request.unitPriceInCents}</div>}
         {request.supplier && <div><b>Fornecedor:</b> {request.supplier}</div>}
+        {request.poNumber && <div><b>Número da PO:</b> {request.poNumber}</div>}
+        {request.needApprovedBy && <div><b>Aprovado por:</b> {request.needApprovedBy}</div>}
+        {request.financeApprovedBy && <div><b>Aprovado financeiramente por:</b> {request.financeApprovedBy}</div>}
+        {request.executedBy && <div><b>Executado por:</b> {request.executedBy}</div>}
+        {request.carrier && <div><b>Transportadora:</b> {request.carrier}</div>}
+        {request.trackingCode && <div><b>Código de rastreio:</b> {request.trackingCode}</div>}
+        {Array.isArray(request.deliveryProof) && request.deliveryProof.length > 0 && (
+          <div className="mt-2">
+            <b>Comprovantes de compra/entrega:</b>
+            <ul className="list-disc ml-6">
+              {request.deliveryProof.map((proof, idx) => (
+                <li key={proof.id || idx}>
+                  <a href={proof.webViewLink} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">
+                    {proof.name || 'Comprovante'}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
     );
   }
@@ -252,11 +279,12 @@ function RequestStatusHistory({ history }: { history: StatusHistoryItem[] }) {
             <li key={idx} className="relative">
               <span className="absolute -left-4 top-1.5 w-3 h-3 rounded-full bg-primary/80 border-2 border-white"></span>
               <div className="flex items-center gap-2">
-                {item.status === 'approved' && <CheckCircle2 className="w-4 h-4 text-green-600" />}
+                {(item.status === 'need_approved' || item.status === 'finance_approved') && <CheckCircle2 className="w-4 h-4 text-green-600" />}
+                {item.status === 'awaiting_delivery' && <Loader2 className="w-4 h-4 text-orange-500 animate-pulse" />}
                 {item.status === 'rejected' && <XCircle className="w-4 h-4 text-red-600" />}
                 {item.status === 'in_progress' && <Loader2 className="w-4 h-4 text-yellow-600 animate-spin" />}
                 {item.status === 'completed' && <CheckCircle2 className="w-4 h-4 text-blue-600" />}
-                <span className="font-semibold capitalize">{item.status}</span>
+                <span className="font-semibold capitalize">{item.status === 'awaiting_delivery' ? 'Aguardando Entrega' : item.status}</span>
                 <span className="text-xs text-muted-foreground ml-2">{dayjs(item.changedAt).format('DD/MM/YYYY HH:mm')}</span>
               </div>
               {item.comment && <div className="text-xs text-muted-foreground ml-6 mt-1">{item.comment}</div>}

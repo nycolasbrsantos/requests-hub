@@ -18,11 +18,13 @@ export const requestTypeEnum = pgEnum('request_type', [
 
 // Enum para o status das requisições
 export const requestStatusEnum = pgEnum('request_status', [
-  'pending',
-  'approved',
-  'rejected',
-  'in_progress',
-  'completed',
+  'pending',           // PR criada, aguardando aprovação de necessidade
+  'need_approved',     // PR aprovada, agora é PO aguardando aprovação financeira
+  'finance_approved',  // PO aprovada financeiramente, aguardando execução
+  'awaiting_delivery', // PO aguardando entrega
+  'rejected',          // Rejeitada em qualquer etapa
+  'in_progress',       // Em execução
+  'completed',         // Concluída
 ])
 
 // Enum para a prioridade (usado em Manutenção e T.I.)
@@ -58,8 +60,15 @@ export const requests = pgTable('requests', {
   // --- Campos específicos para 'Ordem de Compra' ---
   productName: varchar('product_name', { length: 256 }),
   quantity: integer('quantity'),
-  unitPriceInCents: integer('unit_price_in_cents').notNull(), // Armazenado em centavos
+  unitPriceInCents: integer('unit_price_in_cents'), // Armazenado em centavos
   supplier: varchar('supplier', { length: 256 }),
+  poNumber: varchar('po_number', { length: 20 }), // Número da PO quando aprovada
+  needApprovedBy: varchar('need_approved_by', { length: 256 }), // Quem aprovou a necessidade
+  financeApprovedBy: varchar('finance_approved_by', { length: 256 }), // Quem aprovou financeiramente
+  executedBy: varchar('executed_by', { length: 256 }), // Quem executou a compra
+  carrier: varchar('carrier', { length: 256 }), // Transportadora
+  trackingCode: varchar('tracking_code', { length: 256 }), // Código de rastreio
+  deliveryProof: json('delivery_proof').$type<{ id: string; name: string; webViewLink?: string }[]>().default([]), // Comprovante de entrega
 
   // --- Campos específicos para 'Ordem de Manutenção' ---
   equipment: varchar('equipment', { length: 256 }),
@@ -70,10 +79,11 @@ export const requests = pgTable('requests', {
   category: varchar('category', { length: 100 }), // Ex: Hardware, Software, Rede
   attachments: json('attachments').$type<{ id: string; name: string; webViewLink?: string }[]>().default([]),
   statusHistory: json('status_history').$type<{
-    status: 'pending' | 'approved' | 'rejected' | 'in_progress' | 'completed' | 'attachment_added' | 'attachment_removed';
+    status: 'pending' | 'need_approved' | 'finance_approved' | 'awaiting_delivery' | 'rejected' | 'in_progress' | 'completed' | 'attachment_added' | 'attachment_removed';
     changedAt: string;
     changedBy: string;
     comment?: string;
+    poNumber?: string; // Número da PO quando aprovada
   }[]>().default([]),
   driveFolderId: varchar('drive_folder_id', { length: 128 }),
 })

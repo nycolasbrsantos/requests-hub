@@ -50,6 +50,13 @@
       "when": 1751473202140,
       "tag": "0006_zippy_tempest",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1752363056762,
+      "tag": "0007_brown_smasher",
+      "breakpoints": true
     }
   ]
 }

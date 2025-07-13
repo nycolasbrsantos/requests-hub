@@ -38,8 +38,10 @@ export default async function RequestsPage() {
 
   // Filtrar por status
   const pendingRequests = enriched.filter(r => r.status === 'pending');
+  const approvedRequests = enriched.filter(r => ['need_approved', 'finance_approved'].includes(r.status));
+  const awaitingDeliveryRequests = enriched.filter(r => r.status === 'awaiting_delivery');
   const inProgressRequests = enriched.filter(r => r.status === 'in_progress');
-  const finishedRequests = enriched.filter(r => ['completed', 'rejected', 'approved'].includes(r.status));
+  const finishedRequests = enriched.filter(r => ['completed', 'rejected'].includes(r.status));
 
   return (
     <PageContainer className="flex items-center justify-center">
@@ -72,6 +74,13 @@ export default async function RequestsPage() {
             </section>
             <section>
               <div className="flex items-center gap-2 mb-2">
+                <h2 className="text-lg font-bold">Aprovadas</h2>
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">{approvedRequests.length}</span>
+              </div>
+              <RequestsTable requests={approvedRequests} />
+            </section>
+            <section>
+              <div className="flex items-center gap-2 mb-2">
                 <h2 className="text-lg font-bold">Em Andamento</h2>
                 <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">{inProgressRequests.length}</span>
               </div>
@@ -79,8 +88,15 @@ export default async function RequestsPage() {
             </section>
             <section>
               <div className="flex items-center gap-2 mb-2">
-                <h2 className="text-lg font-bold">Concluídas / Negadas</h2>
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">{finishedRequests.length}</span>
+                <h2 className="text-lg font-bold">Aguardando Entrega</h2>
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">{awaitingDeliveryRequests.length}</span>
+              </div>
+              <RequestsTable requests={awaitingDeliveryRequests} />
+            </section>
+            <section>
+              <div className="flex items-center gap-2 mb-2">
+                <h2 className="text-lg font-bold">Concluídas / Rejeitadas</h2>
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">{finishedRequests.length}</span>
               </div>
               <RequestsTable requests={finishedRequests} />
             </section>

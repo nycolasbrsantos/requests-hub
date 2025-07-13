@@ -6,8 +6,8 @@ import { generateRequestPdf } from '@/lib/generate-request-pdf';
 
 export const runtime = 'nodejs';
 
-export async function GET(req: NextRequest, context: any) {
-  const { params } = await context;
+export async function GET(req: NextRequest, context: { params: Promise<{ requestId: string }> }) {
+  const params = await context.params;
   const customId = params.requestId;
   const [request] = await db.select().from(requests).where(eq(requests.customId, customId));
   if (!request) {
