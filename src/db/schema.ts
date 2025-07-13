@@ -145,7 +145,7 @@ export const notifications = pgTable('notifications', {
 
 // Tipos TypeScript que o Drizzle infere do nosso schema.
 // Isso nos dá autocompletar e segurança de tipos em todo o código!
-export type Request = typeof requests.$inferSelect
+export type RequestType = typeof requests.$inferSelect
 export type NewRequest = typeof requests.$inferInsert
 export type User = typeof users.$inferSelect
 export type NewUser = typeof users.$inferInsert

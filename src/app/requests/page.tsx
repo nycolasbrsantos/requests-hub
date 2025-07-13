@@ -1,7 +1,6 @@
 import { PageContainer } from '@/components/ui/page-container';
 import { db } from '@/db';
-import { requests, purchaseRequests, maintenanceRequests, itSupportRequests } from '@/db/schema';
-import { Request } from '@/db/schema';
+import { purchaseRequests, maintenanceRequests, RequestType, requests } from '@/db/schema';
 import RequestsTable from './_components/RequestsTable';
 import { ClipboardList, ArrowLeft } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,17 +9,15 @@ import { Button } from '@/components/ui/button';
 
 export default async function RequestsPage() {
   // Busca todas as requisições principais
-  const data: Request[] = await db.select().from(requests);
+  const data: RequestType[] = await db.select().from(requests);
 
   // Busca dados das tabelas filhas
   const purchaseData = await db.select().from(purchaseRequests);
   const maintenanceData = await db.select().from(maintenanceRequests);
-  const itSupportData = await db.select().from(itSupportRequests);
 
   // Cria um map para acesso rápido
   const purchaseMap = new Map(purchaseData.map((r) => [r.requestId, r]));
   const maintenanceMap = new Map(maintenanceData.map((r) => [r.requestId, r]));
-  const itSupportMap = new Map(itSupportData.map((r) => [r.requestId, r]));
 
   // Enriquecer cada request com dados da tabela filha correspondente
   const enriched = data.map((req) => {
@@ -30,9 +27,7 @@ export default async function RequestsPage() {
     if (req.type === 'maintenance') {
       return { ...req, ...maintenanceMap.get(req.id) };
     }
-    if (["it_support", "it_ticket"].includes(req.type as string)) {
-      return { ...req, ...itSupportMap.get(req.id) };
-    }
+    // Para 'service', não há tabela filha, retorna apenas os dados principais
     return req;
   });
 
